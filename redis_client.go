@@ -6,15 +6,38 @@ import (
 	"github.com/go-redis/redis/v9"
 )
 
+var INTERNAL_ERROR = "Internal error. Please try again later."
+
 var ctx = context.Background()
+var rdb = redis.NewClient(&redis.Options{
+	Addr:     "localhost:6379",
+	Password: "", // no password set
+	DB:       0,  // use default DB
+})
+
+func SetUser(name string, id string) (string, bool) {
+	_, err := rdb.Get(ctx, name).Result()
+	if err != redis.Nil {
+		return "Username is already taken.", false
+	}
+
+	err = rdb.Set(ctx, name, id, 0).Err()
+	if err != nil {
+		return INTERNAL_ERROR, false
+	}
+	return "", true
+}
+
+func GetUser(name string) string {
+	id, err := rdb.Get(ctx, name).Result()
+	if err != nil {
+		panic(err)
+	}
+
+	return id
+}
 
 func ExampleClient() {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
 	err := rdb.Set(ctx, "key", "value", 0).Err()
 	if err != nil {
 		panic(err)
