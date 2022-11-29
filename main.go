@@ -17,8 +17,9 @@ import (
 var rm = NewRoom()
 
 type Message struct {
-	SenderId string `json:"sender_id,omitempty"`
-	Message  string `json:"message,omitempty"`
+	Type    string `json:"type"`
+	Sender  string `json:"sender_id,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 type MessageBody struct {
@@ -28,23 +29,29 @@ type MessageBody struct {
 
 type User struct {
 	uuid string
+	name string
 	ch   chan Message
 	ws   *websocket.Conn
 }
 
 type RegisterBody struct {
-	Uuid     string `json:"uuid"`
-	Username string `json:"username"`
+	Uuid     string `json:"uuid,omitempty"`
+	Username string `json:"username,omitempty"`
 }
 
 type Room struct {
-	users map[string]*User
+	uMap  map[string]*User // uuid: User
 	mutex sync.Mutex
+}
+
+type BroadcastOnline struct {
+	Type  string   `json:"type"`
+	Users []string `json:"users"`
 }
 
 func NewRoom() *Room {
 	r := new(Room)
-	r.users = make(map[string]*User)
+	r.uMap = make(map[string]*User)
 	return r
 }
 
@@ -52,14 +59,14 @@ func (r *Room) AddUser(u *User) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	log.Printf("Adding user: %s\n", u.uuid)
-	r.users[u.uuid] = u
+	r.uMap[u.uuid] = u
 }
 
 func (r *Room) DeleteUser(id string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	log.Printf("Deleting user: %s\n", id)
-	delete(r.users, id)
+	delete(r.uMap, id)
 }
 
 func ChanStream(c *gin.Context) {
@@ -112,7 +119,7 @@ func SendMessage(c *gin.Context) {
 	}
 
 	for _, rec := range msg.Recipients {
-		if u, ok := rm.users[rec]; ok {
+		if u, ok := rm.uMap[rec]; ok {
 			u.ch <- msg.Message
 		} else {
 			c.Status(http.StatusNotFound)
@@ -130,33 +137,41 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, msg)
 		return
 	}
-	c.JSON(http.StatusOK, id)
-}
-
-func Echo(ws *websocket.Conn) {
-	var err error
-	updateJson, err := json.Marshal(`Hi, the handshake it complete!`)
-
-	msg := string(updateJson)
-	for {
-		if err = websocket.Message.Send(ws, msg); err != nil {
-			fmt.Println("Can't send")
-		} else {
-			fmt.Println("Sending")
-		}
-		time.Sleep(time.Second * 1)
-	}
-
+	body.Uuid = id
+	c.JSON(http.StatusOK, body)
 }
 
 func WebSocketHandler(ws *websocket.Conn) {
-	u := new(User)
-	u.uuid = uuid.New().String()
-	u.ws = ws
+	err := ws.SetReadDeadline(time.Now().Add(time.Second * 5))
+	if err != nil {
+		log.Printf("sad %s\n", err)
+	}
+	var rb RegisterBody
+	if err := websocket.JSON.Receive(ws, &rb); err != nil {
+		log.Printf("rb %s\n", err)
+	}
+	log.Printf("Username: %s", rb.Username)
+	userId, ok := GetUser(rb.Username)
+	if !ok {
+		updateJson, _ := json.Marshal(Message{Message: "User not found", Type: "message"})
+		str := string(updateJson)
+		if err := websocket.JSON.Send(ws, &str); err != nil {
+			log.Println(err)
+			return
+		}
+		ws.Close()
+		return
+	}
 
-	defer rm.DeleteUser(u.uuid)
-	rm.AddUser(u)
-	defer ws.Close()
+	u := User{
+		uuid: userId,
+		ws:   ws,
+		name: rb.Username,
+	}
+
+	rm.AddUser(&u)
+	BroadcastOnlineUsers()
+	defer CleanUp(ws, u.uuid)
 	for {
 		// read in a message
 		var msg MessageBody
@@ -165,29 +180,85 @@ func WebSocketHandler(ws *websocket.Conn) {
 			log.Printf("sad %s\n", err)
 		}
 		if err := websocket.JSON.Receive(ws, &msg); err != nil {
+			if err == io.EOF {
+				return
+			}
 			log.Printf("sad2 %s\n", err)
 		}
 		// print out that message for clarity
-		fmt.Printf("%s, %s\n", msg.Message, msg.SenderId)
+		fmt.Printf("%s, %s\n", msg.Message, u.uuid)
+		msg.Sender = u.name
 		if msg.Message.Message != "" {
-			Broadcast(msg.Message.Message)
+			Broadcast(msg.Message)
 		}
 	}
+	return
 }
-func Broadcast(msg string) {
+
+func CleanUp(ws *websocket.Conn, uuid string) {
+	ws.Close()
+	rm.DeleteUser(uuid)
+	BroadcastOnlineUsers()
+}
+
+func Broadcast(msg Message) {
 	updateJson, _ := json.Marshal(msg)
 
 	sendMsg := string(updateJson)
-	for _, u := range rm.users {
+	for _, u := range rm.uMap {
 		if err := websocket.JSON.Send(u.ws, &sendMsg); err != nil {
 			log.Println(err)
 			return
 		}
 	}
+}
 
+func BroadcastOnlineUsers() {
+	body := BroadcastOnline{
+		Users: getUsernames(rm.uMap),
+		Type:  "online",
+	}
+	updateJson, _ := json.Marshal(body)
+
+	online := string(updateJson)
+	for _, u := range rm.uMap {
+		if err := websocket.JSON.Send(u.ws, &online); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+}
+
+func getUsernames(users map[string]*User) []string {
+	res := make([]string, len(users))
+	i := 0
+	for k := range rm.uMap {
+		res[i] = rm.uMap[k].name
+		i++
+	}
+	return res
 }
 
 func main() {
+	go func() {
+		r := gin.Default()
+
+		api := r.Group("/api")
+		{
+			api.POST("/message", SendMessage)
+			api.GET("/stream", ChanStream)
+			api.POST("/register", Register)
+			api.GET("/chat", ChatHandler)
+			api.GET("/test", func(c *gin.Context) {
+				message := Message{Sender: "Ivan", Message: "Hello"}
+				c.JSON(http.StatusOK, message)
+			})
+		}
+
+		if err := r.Run("0.0.0.0:5000"); err != nil {
+			return
+		}
+	}()
 	//http.Handle("/ws", websocket.Handler(Echo))
 	http.Handle("/ws", websocket.Handler(WebSocketHandler))
 
@@ -195,21 +266,4 @@ func main() {
 		log.Fatal("ListenAndServe:", err)
 	}
 
-	r := gin.Default()
-
-	api := r.Group("/api")
-	{
-		api.POST("/message", SendMessage)
-		api.GET("/stream", ChanStream)
-		api.POST("/register", Register)
-		api.GET("/chat", ChatHandler)
-		api.GET("/test", func(c *gin.Context) {
-			message := Message{SenderId: "Ivan", Message: "Hello"}
-			c.JSON(http.StatusOK, message)
-		})
-	}
-
-	if err := r.Run("0.0.0.0:5000"); err != nil {
-		return
-	}
 }

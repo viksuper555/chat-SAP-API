@@ -28,13 +28,14 @@ func SetUser(name string, id string) (string, bool) {
 	return "", true
 }
 
-func GetUser(name string) string {
+func GetUser(name string) (string, bool) {
 	id, err := rdb.Get(ctx, name).Result()
 	if err != nil {
-		panic(err)
+		fmt.Printf("%e, %s, %s", err, name, id)
+		return "", false
 	}
 
-	return id
+	return id, true
 }
 
 func ExampleClient() {
