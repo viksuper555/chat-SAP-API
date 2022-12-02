@@ -150,6 +150,7 @@ func WebSocketHandler(ws *websocket.Conn) {
 				return
 			}
 			log.Printf("sad2 %s\n", err)
+			continue
 		}
 		// print out that message for clarity
 		fmt.Printf("%s, %s\n", msg.Message, u.uuid)
