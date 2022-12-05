@@ -20,17 +20,17 @@ func NewRoom() *Room {
 	return r
 }
 
-func (r *Room) AddUser(u *User) {
+func (r *Room) LoginUser(u *User) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	log.Printf("Adding user: %s\n", u.uuid)
+	log.Printf("User logged in: %s\n", u.uuid)
 	r.uMap[u.uuid] = u
 }
 
-func (r *Room) DeleteUser(id string) {
+func (r *Room) LogoutUser(id string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	log.Printf("Deleting user: %s\n", id)
+	log.Printf("User offline: %s\n", id)
 	delete(r.uMap, id)
 }
 
@@ -57,8 +57,8 @@ func (r *Room) DeleteUser(id string) {
 //	u.uuid = uuid.New().String()
 //	u.ch = make(chan Message)
 //
-//	defer rm.DeleteUser(u.uuid)
-//	rm.AddUser(u)
+//	defer rm.LogoutUser(u.uuid)
+//	rm.LoginUser(u)
 //
 //	select {
 //	case <-c.Writer.CloseNotify():
@@ -93,17 +93,22 @@ func SendMessage(c *gin.Context) {
 	}
 }
 func Register(c *gin.Context) {
-	var body RegisterBody
-	if err := c.BindJSON(&body); err != nil {
+	var rb RegisterBody
+	if err := c.BindJSON(&rb); err != nil {
 		// DO SOMETHING WITH THE ERROR
 	}
+	if exists := UsernameExists(rb.Username); exists {
+		c.JSON(http.StatusForbidden, "Username already exists.")
+		return
+	}
+
 	id := uuid.New().String()
-	if msg, ok := SetUser(id, body.Username); !ok {
+	if msg, ok := SetUser(id, rb.Username); !ok {
 		c.JSON(http.StatusInternalServerError, msg)
 		return
 	}
-	body.Uuid = id
-	c.JSON(http.StatusOK, body)
+	rb.Uuid = id
+	c.JSON(http.StatusOK, rb)
 }
 
 func WebSocketHandler(ws *websocket.Conn) {
@@ -118,7 +123,7 @@ func WebSocketHandler(ws *websocket.Conn) {
 
 	username, ok := GetUser(rb.Uuid)
 	if !ok {
-		updateJson, _ := json.Marshal(Message{Message: "User not found", Type: "alert"})
+		updateJson, _ := json.Marshal(Message{Message: "User not found", Type: "error"})
 		str := string(updateJson)
 		if err := websocket.JSON.Send(ws, &str); err != nil {
 			log.Println(err)
@@ -134,7 +139,7 @@ func WebSocketHandler(ws *websocket.Conn) {
 		name: username,
 	}
 
-	rm.AddUser(&u)
+	rm.LoginUser(&u)
 	SendLoginInfo(ws, u.name)
 	BroadcastOnlineUsers()
 	defer CleanUp(ws, u.uuid)
@@ -165,7 +170,7 @@ func WebSocketHandler(ws *websocket.Conn) {
 
 func CleanUp(ws *websocket.Conn, uuid string) {
 	ws.Close()
-	rm.DeleteUser(uuid)
+	rm.LogoutUser(uuid)
 	BroadcastOnlineUsers()
 }
 
