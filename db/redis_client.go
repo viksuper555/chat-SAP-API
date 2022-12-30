@@ -14,12 +14,6 @@ var rdb = redis.NewClient(&redis.Options{
 	DB: 0, // use default DB
 })
 
-//var rdbNames = redis.NewClient(&redis.Options{ //Name: graphqls map
-//	Addr:     rAddr,
-//	Password: rPass, // no password set
-//	DB:       1,     // use default DB
-//})
-
 func SetUser(name string, u graphql.User) error {
 	if err := jsonSet(name, u); err != nil {
 		return err

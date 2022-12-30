@@ -1,6 +1,8 @@
 package dto_model
 
-import "messenger/graphql"
+import (
+	"messenger/graphql"
+)
 
 type MessageBody struct {
 	Id         uint          `json:"id"`

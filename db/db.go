@@ -12,7 +12,8 @@ import (
 
 type Database interface {
 	Create(message *graphql.Message) error
-	LoadUserMessages(userId string) (*[]graphql.Message, error)
+	LoadUserMessages(userId string) ([]*graphql.Message, error)
+	LoadAllMessages() ([]*graphql.Message, error)
 	Close() error
 }
 
@@ -69,8 +70,18 @@ func (d *GormDB) Create(message *graphql.Message) error {
 	return nil
 }
 
-func (d *GormDB) LoadUserMessages(userId string) (*[]graphql.Message, error) {
-	var messages *[]graphql.Message
+func (d *GormDB) LoadAllMessages() ([]*graphql.Message, error) {
+	var messages []*graphql.Message
+
+	if result := d.dbConn.Find(&messages, ""); result.Error != nil {
+		fmt.Println(result.Error)
+	}
+
+	return messages, nil
+}
+
+func (d *GormDB) LoadUserMessages(userId string) ([]*graphql.Message, error) {
+	var messages []*graphql.Message
 
 	if result := d.dbConn.Find(&messages, ""); result.Error != nil {
 		fmt.Println(result.Error)

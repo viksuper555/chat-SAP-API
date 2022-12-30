@@ -16,9 +16,9 @@ exec:
 model:
   filename: graphql/model/models_gen.go
 
-# Where should the resolver implementations go?
+# Where should the graphql implementations go?
 resolver:
-  filename: graphql/resolver.go
+  filename: graphql/graphql.go
   type: Resolver
 
 
@@ -45,7 +45,7 @@ autobind:
 
 # This section declares type mapping between the GraphQL and go type systems
 #
-# The first line in each type will be used as defaults for resolver arguments and
+# The first line in each type will be used as defaults for graphql arguments and
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
 models:
@@ -60,7 +60,7 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
-  Message:
-    model: graphql.Message
-  User:
-    model: graphql.User
+#  Message:
+#    model: github.tools.sap/I582991/messenger/graphql.Message
+#  User:
+#    model: github.tools.sap/I582991/messenger/graphql.User

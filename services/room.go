@@ -22,8 +22,8 @@ func NewRoom() *Room {
 func (r *Room) LoginUser(u *graphql.User) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	log.Printf("User logged in: %s\n", u.Id)
-	r.UMap[u.Id] = u
+	log.Printf("User logged in: %s\n", u.ID)
+	r.UMap[u.ID] = u
 }
 
 func (r *Room) LogoutUser(id string) {

@@ -45,7 +45,7 @@ func Register(c *gin.Context) {
 	}
 
 	u := graphql.User{
-		Id:   uuid.New().String(),
+		ID:   uuid.New().String(),
 		Name: ub.Name,
 	}
 	if err := db.SetUser(u.Name, u); err != nil {
