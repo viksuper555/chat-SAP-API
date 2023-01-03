@@ -10,8 +10,8 @@ type Message struct {
 	ID     int       `json:"id"`
 	Text   string    `json:"text"`
 	Date   time.Time `json:"date"`
-	UserID int
-	User   *User `json:"user"`
+	User   *User     `json:"user"`
+	UserID int       `json:"userId"`
 }
 
 type NewMessage struct {

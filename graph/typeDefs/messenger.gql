@@ -5,6 +5,7 @@ type Message {
   text: String!
   date: Time!
   user: User!
+  userId: ID!
 }
 
 type User {
@@ -31,7 +32,7 @@ type Mutation {
 type Query {
   getMessages: [Message!]!
   getUserMessages(userId: ID!): [Message!]!
-  getMessage(messageId: ID!): [Message!]!
+  getMessage(messageId: ID!): Message!
   getUsers: [User!]!
   getUser(userId: ID!): User!
 }

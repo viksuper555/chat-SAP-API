@@ -22,8 +22,8 @@ func NewRoom() *Room {
 func (r *Room) LoginUser(u *model.User) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	log.Printf("User logged in: %d\n", u.User.ID)
-	r.UMap[u.User.ID] = u
+	log.Printf("User logged in: %d\n", u.Id)
+	r.UMap[u.Id] = u
 }
 
 func (r *Room) LogoutUser(id int) {
