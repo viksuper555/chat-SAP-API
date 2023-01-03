@@ -14,7 +14,6 @@ type base struct {
 
 type Message struct {
 	base
-	customTypes.Message
 	ID     int       `gorm:"primaryKey" json:"id" `
 	Type   string    `gorm:"type:varchar(100)" json:"type"`
 	Sender int       `gorm:"type:varchar(100)" json:"sender_id,omitempty"`
@@ -24,8 +23,16 @@ type Message struct {
 	//Timestamp int64  `gorm:"not null" json:"timestamp,omitempty" `
 }
 
+func (m *Message) ToGraph() *customTypes.Message {
+	return &customTypes.Message{
+		ID:     m.ID,
+		Text:   m.Text,
+		Date:   m.Date,
+		UserID: m.Sender,
+	}
+}
+
 type User struct {
-	customTypes.User
 	Id       int             `json:"id,omitempty" gorm:"primaryKey"`
 	Name     string          `json:"name,omitempty"`
 	Password string          `json:"password,omitempty"`

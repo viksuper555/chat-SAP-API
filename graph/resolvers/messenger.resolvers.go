@@ -18,7 +18,10 @@ import (
 func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.NewMessage) (*customTypes.Message, error) {
 	context := common.GetContext(ctx)
 	var user model.User
-	err := context.Database.Where(&model.User{ID: input.UserID}).First(&user).Error
+	err := context.Database.Where(&model.User{Id: input.UserID}).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
 	msg := &model.Message{
 		Text:   input.Text,
 		Sender: input.UserID,
@@ -40,7 +43,21 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input customTypes.UserPass) (*customTypes.User, error) {
-	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+	context := common.GetContext(ctx)
+	user := &model.User{
+		Name:     input.Username,
+		Password: input.Password,
+	}
+	err := context.Database.Create(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	res := &customTypes.User{
+		ID:   user.Id,
+		Name: user.Name,
+	}
+	return res, nil
 }
 
 // Login is the resolver for the login field.
@@ -59,8 +76,14 @@ func (r *queryResolver) GetUserMessages(ctx context.Context, userID int) ([]*cus
 }
 
 // GetMessage is the resolver for the getMessage field.
-func (r *queryResolver) GetMessage(ctx context.Context, messageID int) ([]*customTypes.Message, error) {
-	panic(fmt.Errorf("not implemented: GetMessage - getMessage"))
+func (r *queryResolver) GetMessage(ctx context.Context, messageID int) (*customTypes.Message, error) {
+	context := common.GetContext(ctx)
+	var msg model.Message
+	err := context.Database.Where(&model.Message{ID: messageID}).First(&msg).Error
+	if err != nil {
+		return nil, err
+	}
+	return msg.ToGraph(), nil
 }
 
 // GetUsers is the resolver for the getUsers field.
