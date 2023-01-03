@@ -33,7 +33,7 @@ func WebSocketHandler(ws *websocket.Conn) {
 		ws.Close()
 		return
 	}
-	if u.ID != ub.ID {
+	if u.Id != ub.Id {
 		updateJson, _ := json.Marshal(dto_model.MessageBody{Message: "Wrong token.", Type: "error"})
 		str := string(updateJson)
 		if err = websocket.JSON.Send(ws, &str); err != nil {
@@ -46,7 +46,7 @@ func WebSocketHandler(ws *websocket.Conn) {
 	services.Rm.LoginUser(u)
 	SendLoginInfo(u)
 	BroadcastOnlineUsers()
-	defer CleanUp(ws, u.ID)
+	defer CleanUp(ws, u.Id)
 
 	// read in a message
 	var msg dto_model.MessageBody
@@ -64,8 +64,8 @@ func WebSocketHandler(ws *websocket.Conn) {
 			continue
 		}
 		// print out that message for clarity
-		fmt.Printf("%s, %s\n", msg.Message, u.ID)
-		msg.Sender = u.Name
+		fmt.Printf("%s, %s\n", msg.Message, u.Id)
+		msg.Sender = u.Id
 		if msg.Message != "" {
 			msg.Type = "message"
 			msg.Timestamp = time.Now().Unix()

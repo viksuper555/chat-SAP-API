@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/json"
 	"github.com/go-redis/redis"
-	"messenger/graphql"
+	"messenger/model"
 )
 
 var rAddr = "localhost:6379"
@@ -14,15 +14,15 @@ var rdb = redis.NewClient(&redis.Options{
 	DB: 0, // use default DB
 })
 
-func SetUser(name string, u graphql.User) error {
+func SetUser(name string, u model.User) error {
 	if err := jsonSet(name, u); err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetUser(name string) (*graphql.User, error) {
-	var u graphql.User
+func GetUser(name string) (*model.User, error) {
+	var u model.User
 	if err := jsonGet(name, &u); err != nil {
 		return nil, err
 	}

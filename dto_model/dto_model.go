@@ -1,22 +1,22 @@
 package dto_model
 
 import (
-	"messenger/graphql"
+	"messenger/model"
 )
 
 type MessageBody struct {
-	Id         uint          `json:"id"`
-	Type       string        `json:"type"`
-	Sender     string        `json:"sender_id,omitempty"`
-	Message    string        `json:"message,omitempty"`
-	Timestamp  int64         `json:"timestamp,omitempty"`
-	User       *graphql.User `json:"user"`
-	Recipients []string      `json:"recipients,omitempty"`
+	Id         int         `json:"id"`
+	Type       string      `json:"type"`
+	Sender     int         `json:"sender_id,omitempty"`
+	Message    string      `json:"message,omitempty"`
+	Timestamp  int64       `json:"timestamp,omitempty"`
+	User       *model.User `json:"user"`
+	Recipients []int       `json:"recipients,omitempty"`
 }
 
 type UserBody struct {
-	graphql.User `json:"dto_models,omitempty"`
-	Type         string `json:"type,omitempty"`
+	model.User `json:"user,omitempty"`
+	Type       string `json:"type,omitempty"`
 }
 
 type BroadcastOnline struct {

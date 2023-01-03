@@ -1,0 +1,37 @@
+scalar Time
+
+type Message {
+  id: ID!
+  text: String!
+  date: Time!
+  user: User!
+}
+
+type User {
+  id: ID!
+  name: String!
+}
+
+input NewMessage {
+  userId: ID!
+  text: String!
+}
+
+input UserPass {
+  username: String!
+  password: String!
+}
+
+type Mutation {
+  createMessage(input: NewMessage!): Message!
+  createUser(input: UserPass!): User!
+  login(input: UserPass!): String!
+}
+
+type Query {
+  getMessages: [Message!]!
+  getUserMessages(userId: ID!): [Message!]!
+  getMessage(messageId: ID!): [Message!]!
+  getUsers: [User!]!
+  getUser(userId: ID!): User!
+}

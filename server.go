@@ -2,18 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"golang.org/x/net/websocket"
+	"gorm.io/gorm"
 	"log"
 	"messenger/communication"
 	"messenger/config"
-	"messenger/db"
-	"messenger/graphql"
+	"messenger/graph/generated"
+	graph "messenger/graph/resolvers"
+	"messenger/internal/common"
 	"net/http"
 	"os"
-
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 )
 
 const defaultPort = "8080"
@@ -22,48 +22,78 @@ func main() {
 	appConfig := config.NewFromEnv()
 
 	log.Print("Connecting to DB...")
-	database, err := dbConnect(appConfig)
+	db, err := common.InitDb(appConfig)
 	if err != nil {
 		log.Fatalf("Failed to init database: %s", err)
 	}
-	defer dbDisconnect(database)
+	customCtx := &common.CustomContext{
+		Database: db,
+	}
+
+	defer func(dbConn *gorm.DB) {
+		err := dbDisconnect(dbConn)
+		if err != nil {
+			log.Fatal("Failed to close database connection: %s", err)
+		}
+	}(db)
 	log.Print("Connected to DB!")
 
-	go func() {
-		r := gin.Default()
-
-		api := r.Group("/api")
-		{
-			api.POST("/message", communication.SendMessage)
-			api.POST("/register", communication.Register)
-		}
-
-		if err = r.Run("0.0.0.0:5000"); err != nil {
-			return
-		}
-	}()
-	go func() {
-		http.Handle("/ws", websocket.Handler(communication.WebSocketHandler))
-
-		if err := http.ListenAndServe("0.0.0.0:9000", nil); err != nil {
-			log.Fatal("ListenAndServe:", err)
-		}
-	}()
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
 
-	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: &graphql.Resolver{}}))
+	mux := http.NewServeMux()
+	// REST
+	mux.HandleFunc("/api/message", communication.SendMessage)
+	mux.HandleFunc("/api/register", communication.Register)
 
-	http.Handle("/api", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	// WS
+	mux.Handle("/ws", websocket.Handler(communication.WebSocketHandler))
+
+	// GQL
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+
+	mux.Handle("/graph/api", playground.Handler("GraphQL playground", "/query"))
+	mux.Handle("/query", common.CreateContext(customCtx, srv))
+
+	//go func() {
+	//	r := gin.Default()
+	//
+	//	api := r.Group("/api")
+	//	{
+	//		api.POST("/message", communication.SendMessage)
+	//		api.POST("/register", communication.Register)
+	//	}
+	//
+	//	if err = r.Run("0.0.0.0:5000"); err != nil {
+	//		return
+	//	}
+	//}()
+	//
+	//go func() {
+	//	mux.Handle("/ws", websocket.Handler(communication.WebSocketHandler))
+	//
+	//	if err := http.ListenAndServe("0.0.0.0:9000", nil); err != nil {
+	//		log.Fatal("ListenAndServe:", err)
+	//	}
+	//}()
+	//
+	//srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	//
+	//mux.Handle("/api", playground.Handler("GraphQL playground", "/query"))
+	//mux.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }
 
-func dbConnect(appConfig config.Config) (db.Database, error) {
+//func handleREST() {
+//	myRouter := mux.NewRouter().StrictSlash(true)
+//	myRouter.HandleFunc("/api/message", communication.SendMessage)
+//}
+
+func dbConnect(appConfig config.Config) (*gorm.DB, error) {
 	appConfigJSON, err := json.MarshalIndent(appConfig, "", "  ")
 	if err != nil {
 		log.Printf("Error on writing config as json: %s", err.Error())
@@ -72,16 +102,14 @@ func dbConnect(appConfig config.Config) (db.Database, error) {
 	log.Printf("appconfig: %s\n", string(appConfigJSON))
 	log.Printf("os env: %s", os.Environ())
 
-	return db.Init(appConfig)
+	return common.InitDb(appConfig)
 }
 
-func dbDisconnect(database db.Database) {
-	if database == nil {
-		return
-	}
-	err := database.Close()
+func dbDisconnect(dbConn *gorm.DB) error {
+	database, err := dbConn.DB()
 	if err != nil {
-		log.Printf("Error closing database connection: %s", err.Error())
+		return err
 	}
-	log.Print("Successfully closed connection to database")
+
+	return database.Close()
 }

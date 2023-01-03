@@ -5,7 +5,7 @@ import (
 	"golang.org/x/net/websocket"
 	"log"
 	"messenger/dto_model"
-	"messenger/graphql"
+	"messenger/model"
 	"messenger/services"
 )
 
@@ -44,10 +44,10 @@ func BroadcastOnlineUsers() {
 	}
 }
 
-func SendLoginInfo(u *graphql.User) {
+func SendLoginInfo(u *model.User) {
 	updateJson, err := json.Marshal(dto_model.UserBody{User: *u, Type: "login"})
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 
@@ -58,8 +58,8 @@ func SendLoginInfo(u *graphql.User) {
 	}
 }
 
-func CleanUp(ws *websocket.Conn, uuid string) {
+func CleanUp(ws *websocket.Conn, id int) {
 	ws.Close()
-	services.Rm.LogoutUser(uuid)
+	services.Rm.LogoutUser(id)
 	BroadcastOnlineUsers()
 }
