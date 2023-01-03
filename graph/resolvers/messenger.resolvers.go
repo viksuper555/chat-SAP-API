@@ -18,7 +18,7 @@ import (
 func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.NewMessage) (*customTypes.Message, error) {
 	//context := common.GetContext(ctx)
 	//var user model.User
-	//err := common.Db.Where(&model.User{Id: input.UserID}).First(&user).Error
+	//err := common.Db.Where(&model.User{ID: input.UserID}).First(&user).Error
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -54,7 +54,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input customTypes.Use
 	}
 
 	res := &customTypes.User{
-		ID:   user.Id,
+		ID:   user.ID,
 		Name: user.Name,
 	}
 	return res, nil
@@ -67,12 +67,24 @@ func (r *mutationResolver) Login(ctx context.Context, input customTypes.UserPass
 
 // GetMessages is the resolver for the getMessages field.
 func (r *queryResolver) GetMessages(ctx context.Context) ([]*customTypes.Message, error) {
-	panic(fmt.Errorf("not implemented: GetMessages - getMessages"))
+	context := common.GetContext(ctx)
+	var messages []*model.Message
+	err := context.Database.Find(&messages).Error
+	if err != nil {
+		return nil, err
+	}
+	return model.MessagesToGraph(messages), nil
 }
 
 // GetUserMessages is the resolver for the getUserMessages field.
 func (r *queryResolver) GetUserMessages(ctx context.Context, userID int) ([]*customTypes.Message, error) {
-	panic(fmt.Errorf("not implemented: GetUserMessages - getUserMessages"))
+	context := common.GetContext(ctx)
+	var messages []*model.Message
+	err := context.Database.Where(&model.Message{Sender: userID}).Find(&messages).Error
+	if err != nil {
+		return nil, err
+	}
+	return model.MessagesToGraph(messages), nil
 }
 
 // GetMessage is the resolver for the getMessage field.
@@ -88,12 +100,24 @@ func (r *queryResolver) GetMessage(ctx context.Context, messageID int) (*customT
 
 // GetUsers is the resolver for the getUsers field.
 func (r *queryResolver) GetUsers(ctx context.Context) ([]*customTypes.User, error) {
-	panic(fmt.Errorf("not implemented: GetUsers - getUsers"))
+	context := common.GetContext(ctx)
+	var users []*model.User
+	err := context.Database.Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return model.UsersToGraph(users), nil
 }
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, userID int) (*customTypes.User, error) {
-	panic(fmt.Errorf("not implemented: GetUser - getUser"))
+	context := common.GetContext(ctx)
+	var u model.User
+	err := context.Database.Where(&model.User{ID: userID}).First(&u).Error
+	if err != nil {
+		return nil, err
+	}
+	return u.ToGraph(), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

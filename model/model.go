@@ -33,10 +33,33 @@ func (m *Message) ToGraph() *customTypes.Message {
 	}
 }
 
+func MessagesToGraph(m []*Message) []*customTypes.Message {
+	g := make([]*customTypes.Message, len(m))
+	for i := range m {
+		g[i] = m[i].ToGraph()
+	}
+	return g
+}
+
 type User struct {
-	Id       int             `json:"id,omitempty" gorm:"primaryKey"`
+	ID       int             `json:"id,omitempty" gorm:"primaryKey"`
 	Name     string          `json:"name,omitempty"`
 	Password string          `json:"password,omitempty"`
 	Ch       chan Message    `json:"-" gorm:"-"`
 	Ws       *websocket.Conn `json:"-" gorm:"-"`
+}
+
+func (u *User) ToGraph() *customTypes.User {
+	return &customTypes.User{
+		ID:   u.ID,
+		Name: u.Name,
+	}
+}
+
+func UsersToGraph(u []*User) []*customTypes.User {
+	g := make([]*customTypes.User, len(u))
+	for i := range u {
+		g[i] = u[i].ToGraph()
+	}
+	return g
 }
