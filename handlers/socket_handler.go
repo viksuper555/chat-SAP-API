@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
-	"messenger/db"
+	"messenger/cache"
 	"messenger/dto_model"
 	"messenger/services"
 	"net/http"
@@ -39,7 +39,7 @@ func HandleWebsocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := db.GetUser(ub.Name)
+	u, err := cache.GetUser(ub.Name)
 	if err != nil {
 		updateJson, _ := json.Marshal(dto_model.MessageBody{Message: "User not found", Type: "error"})
 		if err := conn.WriteMessage(websocket.TextMessage, updateJson); err != nil {

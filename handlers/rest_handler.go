@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"log"
-	redis_db "messenger/db"
+	redis_db "messenger/cache"
 	"messenger/dto_model"
 	"messenger/internal/common"
 	"messenger/model"
