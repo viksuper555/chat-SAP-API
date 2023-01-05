@@ -1,11 +1,10 @@
-package communication
+package handlers
 
 import (
-	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
-	"io"
 	"log"
-	"messenger/db"
+	redis_db "messenger/db"
 	"messenger/dto_model"
 	"messenger/internal/common"
 	"messenger/model"
@@ -14,11 +13,11 @@ import (
 	"time"
 )
 
-func SendMessage(w http.ResponseWriter, r *http.Request) {
-	reqBody, _ := io.ReadAll(r.Body)
+func SendMessage(c *gin.Context) {
 	var msgBody dto_model.MessageBody
-	err := json.Unmarshal(reqBody, &msgBody)
+	err := c.BindJSON(msgBody)
 	if err != nil {
+		c.Status(http.StatusBadRequest)
 		return
 	}
 	msg := model.Message{
@@ -33,23 +32,22 @@ func SendMessage(w http.ResponseWriter, r *http.Request) {
 		if u, ok := services.Rm.UMap[rec]; ok {
 			u.Ch <- msg
 		} else {
-			w.WriteHeader(http.StatusNotFound)
+			c.Status(http.StatusNotFound)
 			return
 		}
 	}
 }
-func Register(w http.ResponseWriter, r *http.Request) {
-	reqBody, _ := io.ReadAll(r.Body)
+func Register(c *gin.Context) {
 	var ub dto_model.UserBody
-	err := json.Unmarshal(reqBody, &ub)
+	err := c.BindJSON(ub)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		c.Status(http.StatusBadRequest)
 		log.Println(err)
 		return
 	}
 
-	if _, err := db.GetUser(ub.Name); err != redis.Nil {
-		w.WriteHeader(http.StatusForbidden)
+	if _, err := redis_db.GetUser(ub.Name); err != redis.Nil {
+		c.Status(http.StatusForbidden)
 		log.Println(err)
 		return
 	}
@@ -58,18 +56,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		Password: ub.Password,
 	}
 
-	err = common.Db.Create(&u).Error
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+	ctx := c.Request.Context().Value("ctx").(*common.Context)
+	db := ctx.Database
 
-	err = json.NewEncoder(w).Encode(u)
+	err = db.Create(&u).Error
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		c.Status(http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, u)
 }

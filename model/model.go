@@ -1,7 +1,7 @@
 package model
 
 import (
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 	"messenger/graph/customTypes"
 	"time"
 )

@@ -6,29 +6,21 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"messenger/graph/customTypes"
 	"messenger/graph/generated"
-	"messenger/internal/common"
 	"messenger/model"
 	"time"
 )
 
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.NewMessage) (*customTypes.Message, error) {
-	//context := common.GetContext(ctx)
-	//var user model.User
-	//err := common.Db.Where(&model.User{ID: input.UserID}).First(&user).Error
-	//if err != nil {
-	//	return nil, err
-	//}
 	msg := &model.Message{
 		Text:   input.Text,
 		Sender: input.UserID,
 		Date:   time.Now(),
 		UserID: uint(input.UserID),
 	}
-	err := common.Db.Create(&msg).Error
+	err := r.DB.Create(&msg).Error
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +40,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input customTypes.Use
 		Name:     input.Username,
 		Password: input.Password,
 	}
-	err := common.Db.Create(&user).Error
+	err := r.DB.Create(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -61,15 +53,28 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input customTypes.Use
 }
 
 // Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, input customTypes.UserPass) (string, error) {
-	panic(fmt.Errorf("not implemented: Login - login"))
+func (r *mutationResolver) Login(ctx context.Context, input customTypes.UserPass) (bool, error) {
+	var user model.User
+	var exists bool
+	err := r.DB.Model(&user).
+		Select("count(*) > 0").
+		Where("name = ? AND password = ?", input.Username, input.Password).
+		Find(&exists).
+		Error
+
+	if err != nil {
+		return exists, err
+	}
+	if !exists {
+		return exists, err
+	}
+	return exists, nil
 }
 
 // GetMessages is the resolver for the getMessages field.
 func (r *queryResolver) GetMessages(ctx context.Context) ([]*customTypes.Message, error) {
-	context := common.GetContext(ctx)
 	var messages []*model.Message
-	err := context.Database.Find(&messages).Error
+	err := r.DB.Find(&messages).Error
 	if err != nil {
 		return nil, err
 	}
@@ -78,9 +83,8 @@ func (r *queryResolver) GetMessages(ctx context.Context) ([]*customTypes.Message
 
 // GetUserMessages is the resolver for the getUserMessages field.
 func (r *queryResolver) GetUserMessages(ctx context.Context, userID int) ([]*customTypes.Message, error) {
-	context := common.GetContext(ctx)
 	var messages []*model.Message
-	err := context.Database.Where(&model.Message{Sender: userID}).Find(&messages).Error
+	err := r.DB.Where(&model.Message{Sender: userID}).Find(&messages).Error
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +93,8 @@ func (r *queryResolver) GetUserMessages(ctx context.Context, userID int) ([]*cus
 
 // GetMessage is the resolver for the getMessage field.
 func (r *queryResolver) GetMessage(ctx context.Context, messageID int) (*customTypes.Message, error) {
-	context := common.GetContext(ctx)
 	var msg model.Message
-	err := context.Database.Where(&model.Message{ID: messageID}).First(&msg).Error
+	err := r.DB.Where(&model.Message{ID: messageID}).First(&msg).Error
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +103,8 @@ func (r *queryResolver) GetMessage(ctx context.Context, messageID int) (*customT
 
 // GetUsers is the resolver for the getUsers field.
 func (r *queryResolver) GetUsers(ctx context.Context) ([]*customTypes.User, error) {
-	context := common.GetContext(ctx)
 	var users []*model.User
-	err := context.Database.Find(&users).Error
+	err := r.DB.Find(&users).Error
 	if err != nil {
 		return nil, err
 	}
@@ -111,9 +113,8 @@ func (r *queryResolver) GetUsers(ctx context.Context) ([]*customTypes.User, erro
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, userID int) (*customTypes.User, error) {
-	context := common.GetContext(ctx)
 	var u model.User
-	err := context.Database.Where(&model.User{ID: userID}).First(&u).Error
+	err := r.DB.Where(&model.User{ID: userID}).First(&u).Error
 	if err != nil {
 		return nil, err
 	}

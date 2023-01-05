@@ -76,7 +76,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateMessage(ctx context.Context, input customTypes.NewMessage) (*customTypes.Message, error)
 	CreateUser(ctx context.Context, input customTypes.UserPass) (*customTypes.User, error)
-	Login(ctx context.Context, input customTypes.UserPass) (string, error)
+	Login(ctx context.Context, input customTypes.UserPass) (bool, error)
 }
 type QueryResolver interface {
 	GetMessages(ctx context.Context) ([]*customTypes.Message, error)
@@ -334,7 +334,7 @@ input UserPass {
 type Mutation {
   createMessage(input: NewMessage!): Message!
   createUser(input: UserPass!): User!
-  login(input: UserPass!): String!
+  login(input: UserPass!): Boolean!
 }
 
 type Query {
@@ -874,9 +874,9 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -886,7 +886,7 @@ func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, fie
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {

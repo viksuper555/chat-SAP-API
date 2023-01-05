@@ -1,8 +1,8 @@
-package communication
+package handlers
 
 import (
 	"encoding/json"
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 	"log"
 	"messenger/dto_model"
 	"messenger/model"
@@ -11,10 +11,8 @@ import (
 
 func Broadcast(msg interface{}) {
 	updateJson, _ := json.Marshal(msg)
-
-	sendMsg := string(updateJson)
 	for _, u := range services.Rm.UMap {
-		if err := websocket.JSON.Send(u.Ws, &sendMsg); err != nil {
+		if err := u.Ws.WriteMessage(websocket.TextMessage, updateJson); err != nil {
 			log.Println(err)
 			return
 		}
@@ -34,10 +32,8 @@ func BroadcastOnlineUsers() {
 		Type:  "online",
 	}
 	updateJson, _ := json.Marshal(body)
-
-	online := string(updateJson)
 	for _, u := range services.Rm.UMap {
-		if err := websocket.JSON.Send(u.Ws, &online); err != nil {
+		if err := u.Ws.WriteMessage(websocket.TextMessage, updateJson); err != nil {
 			log.Println(err)
 			return
 		}
@@ -50,9 +46,7 @@ func SendLoginInfo(u *model.User) {
 		log.Println(err)
 		return
 	}
-
-	str := string(updateJson)
-	if err := websocket.JSON.Send(u.Ws, &str); err != nil {
+	if err := u.Ws.WriteMessage(websocket.TextMessage, updateJson); err != nil {
 		log.Println(err)
 		return
 	}
