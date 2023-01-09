@@ -23,7 +23,7 @@ func BroadcastOnlineUsers() {
 	names := make([]string, len(services.Rm.UMap))
 	i := 0
 	for k := range services.Rm.UMap {
-		names[i] = services.Rm.UMap[k].Name
+		names[i] = services.Rm.UMap[k].Username
 		i++
 	}
 

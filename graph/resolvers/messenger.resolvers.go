@@ -16,9 +16,8 @@ import (
 func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.NewMessage) (*customTypes.Message, error) {
 	msg := &model.Message{
 		Text:   input.Text,
-		Sender: input.UserID,
+		UserID: input.UserID,
 		Date:   time.Now(),
-		UserID: uint(input.UserID),
 	}
 	err := r.DB.Create(&msg).Error
 	if err != nil {
@@ -37,7 +36,7 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.
 func (r *mutationResolver) CreateUser(ctx context.Context, input customTypes.UserPass) (*customTypes.User, error) {
 	//context := common.GetContext(ctx)
 	user := &model.User{
-		Name:     input.Username,
+		Username: input.Username,
 		Password: input.Password,
 	}
 	err := r.DB.Create(&user).Error
@@ -47,7 +46,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input customTypes.Use
 
 	res := &customTypes.User{
 		ID:   user.ID,
-		Name: user.Name,
+		Name: user.Username,
 	}
 	return res, nil
 }
@@ -84,7 +83,7 @@ func (r *queryResolver) GetMessages(ctx context.Context) ([]*customTypes.Message
 // GetUserMessages is the resolver for the getUserMessages field.
 func (r *queryResolver) GetUserMessages(ctx context.Context, userID int) ([]*customTypes.Message, error) {
 	var messages []*model.Message
-	err := r.DB.Where(&model.Message{Sender: userID}).Find(&messages).Error
+	err := r.DB.Where(&model.Message{UserID: userID}).Find(&messages).Error
 	if err != nil {
 		return nil, err
 	}

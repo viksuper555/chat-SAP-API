@@ -3,10 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
-	"messenger/cache"
 	"messenger/dto_model"
+	"messenger/internal/common"
+	"messenger/model"
 	"messenger/services"
 	"net/http"
 	"time"
@@ -18,7 +20,11 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func HandleWebsocket(w http.ResponseWriter, r *http.Request) {
+func HandleWebsocket(c *gin.Context) {
+	w := c.Writer
+	r := c.Request
+	ctx := c.Request.Context().Value("ctx").(*common.Context)
+	db := ctx.Database
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -38,8 +44,9 @@ func HandleWebsocket(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
-	u, err := cache.GetUser(ub.Name)
+	var user model.User
+	err = db.Where("name = ? AND password = ?", ub.Username, ub.Password).First(&user).Error
+	//u, err := cache.GetUser(ub.Username)
 	if err != nil {
 		updateJson, _ := json.Marshal(dto_model.MessageBody{Message: "User not found", Type: "error"})
 		if err := conn.WriteMessage(websocket.TextMessage, updateJson); err != nil {
@@ -48,19 +55,13 @@ func HandleWebsocket(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 		return
 	}
-	if u.ID != ub.ID {
-		updateJson, _ := json.Marshal(dto_model.MessageBody{Message: "Wrong token.", Type: "error"})
-		if err = conn.WriteMessage(websocket.TextMessage, updateJson); err != nil {
-			log.Println(err)
-			return
-		}
-	}
-	u.Ws = conn
 
-	services.Rm.LoginUser(u)
-	SendLoginInfo(u)
+	user.Ws = conn
+
+	services.Rm.LoginUser(&user)
+	SendLoginInfo(&user)
 	BroadcastOnlineUsers()
-	defer CleanUp(conn, u.ID)
+	defer CleanUp(conn, user.ID)
 
 	// read in a message
 	var msg dto_model.MessageBody
@@ -79,8 +80,12 @@ func HandleWebsocket(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// print out that message for clarity
-		fmt.Printf("%s, %s\n", msg.Message, u.ID)
-		msg.Sender = u.ID
+		fmt.Printf("%s, %s\n", msg.Message, user.ID)
+		msg.Sender = user.ID
+		err = db.Create(&model.Message{
+			Text: msg.Message, UserID: msg.Sender,
+			Date: time.Unix(msg.Timestamp, 0),
+		}).Error
 		if msg.Message != "" {
 			msg.Type = "message"
 			msg.Timestamp = time.Now().Unix()

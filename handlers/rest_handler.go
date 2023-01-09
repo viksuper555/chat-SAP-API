@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
 	"log"
-	redis_db "messenger/cache"
 	"messenger/dto_model"
 	"messenger/internal/common"
 	"messenger/model"
@@ -15,16 +13,15 @@ import (
 
 func SendMessage(c *gin.Context) {
 	var msgBody dto_model.MessageBody
-	err := c.BindJSON(msgBody)
+	err := c.BindJSON(&msgBody)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		return
 	}
 	msg := model.Message{
 		ID:     msgBody.Id,
-		User:   msgBody.User,
 		Type:   msgBody.Type,
-		Sender: msgBody.Sender,
+		UserID: msgBody.Sender,
 		Text:   msgBody.Message,
 		Date:   time.Unix(msgBody.Timestamp, 0),
 	}
@@ -38,26 +35,26 @@ func SendMessage(c *gin.Context) {
 	}
 }
 func Register(c *gin.Context) {
+	ctx := c.Request.Context().Value("ctx").(*common.Context)
+	db := ctx.Database
+
 	var ub dto_model.UserBody
-	err := c.BindJSON(ub)
+	err := c.BindJSON(&ub)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		log.Println(err)
 		return
 	}
-
-	if _, err := redis_db.GetUser(ub.Name); err != redis.Nil {
+	var user model.User
+	if err = db.Where("name = ?", ub.Username).First(&user).Error; err != nil {
 		c.Status(http.StatusForbidden)
 		log.Println(err)
 		return
 	}
 	u := &model.User{
-		Name:     ub.Name,
+		Username: ub.Username,
 		Password: ub.Password,
 	}
-
-	ctx := c.Request.Context().Value("ctx").(*common.Context)
-	db := ctx.Database
 
 	err = db.Create(&u).Error
 	if err != nil {

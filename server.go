@@ -28,14 +28,12 @@ func main() {
 		Database: db,
 	}
 	r.Use(func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), "ctx", &ctx)
-		c.Request = c.Request.WithContext(ctx)
+		con := context.WithValue(c.Request.Context(), "ctx", ctx)
+		c.Request = c.Request.WithContext(con)
 		c.Next()
 	})
 
-	r.GET("/ws", func(c *gin.Context) {
-		handlers.HandleWebsocket(c.Writer, c.Request)
-	})
+	r.GET("/ws", handlers.HandleWebsocket)
 	// REST
 	r.POST("/api/message", handlers.SendMessage)
 	r.POST("/api/register", handlers.Register)

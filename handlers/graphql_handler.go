@@ -11,12 +11,11 @@ import (
 )
 
 func GraphqlHandler(c *gin.Context) {
-	//TODO: Find out why the context becomes a pointer to pointer
-	ctx, ok := c.Request.Context().Value("ctx").(**common.Context)
+	ctx, ok := c.Request.Context().Value("ctx").(*common.Context)
 	if !ok {
 		log.Fatal()
 	}
-	db := (*ctx).Database
+	db := ctx.Database
 
 	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{DB: db}}))
 	h.ServeHTTP(c.Writer, c.Request)
