@@ -20,7 +20,14 @@ type UserBody struct {
 	Type       string `json:"type,omitempty"`
 }
 
-type BroadcastOnline struct {
-	Type  string   `json:"type"`
-	Users []string `json:"users"`
+type DataOnLogin struct {
+	model.User  `json:"user,omitempty"`
+	Type        string `json:"type,omitempty"`
+	OnlineUsers []int  `json:"online_user_ids,omitempty"`
+}
+
+type ActiveUsersUpdate struct {
+	Type      string `json:"type"`
+	UserId    int    `json:"user_id"`
+	Connected bool   `json:"connected"`
 }

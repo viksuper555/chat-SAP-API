@@ -42,7 +42,7 @@ func Register(c *gin.Context) {
 		return
 	}
 	var user model.User
-	if err = db.Where("name = ?", ub.Username).First(&user).Error; err == nil {
+	if err = db.Where("username = ?", ub.Username).First(&user).Error; err == nil {
 		c.Status(http.StatusForbidden)
 		log.Println(err)
 		return

@@ -56,41 +56,11 @@ func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
+		c.hub.Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: c.user.ID, Connected: false}
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-
-	//region Initial Login
-	_, bytes, err := c.conn.ReadMessage()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	var ub dto_model.UserBody
-	if err = json.Unmarshal(bytes, &ub); err != nil {
-		log.Println(err)
-		return
-	}
-	var user model.User
-	err = DB.Where("username = ? AND password = ?", ub.Username, ub.Password).First(&user).Error
-	//u, err := cache.GetUser(ub.Username)
-	if err != nil {
-		updateJson, _ := json.Marshal(dto_model.MessageBody{Message: "User not found", Type: "error"})
-		if err := c.conn.WriteMessage(websocket.TextMessage, updateJson); err != nil {
-			log.Println(err)
-		}
-		c.conn.Close()
-		return
-	}
-	c.user = &user
-	updateJson, err := json.Marshal(dto_model.UserBody{User: user, Type: "login"})
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	c.send <- updateJson
-	// endregion
 
 	var msg dto_model.MessageBody
 	for {
@@ -172,10 +142,48 @@ func ServeWs(c *gin.Context, hub *Hub) {
 		return
 	}
 	client := &Client{hub: hub, conn: conn, send: make(chan interface{}, 256)}
-	client.hub.register <- client
+	hub.register <- client
+
+	//region Initial Login
+	_, bytes, err := conn.ReadMessage()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	var ub dto_model.UserBody
+	if err = json.Unmarshal(bytes, &ub); err != nil {
+		log.Println(err)
+		return
+	}
+	var user model.User
+	err = DB.Where("username = ? AND password = ?", ub.Username, ub.Password).First(&user).Error
+	//u, err := cache.GetUser(ub.Username)
+	if err != nil {
+		updateJson, _ := json.Marshal(dto_model.MessageBody{Message: "User not found", Type: "error"})
+		if err := conn.WriteMessage(websocket.TextMessage, updateJson); err != nil {
+			log.Println(err)
+		}
+		conn.Close()
+		return
+	}
+	client.user = &user
+
+	var onlineUsers = getOnlineUsers(Hub1)
+	updateJson, err := json.Marshal(dto_model.DataOnLogin{User: user, Type: "login", OnlineUsers: onlineUsers})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	if err := conn.WriteMessage(websocket.TextMessage, updateJson); err != nil {
+		log.Println(err)
+	}
+	//client.send <- updateJson
+	// endregion
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
 	go client.readPump()
+
+	hub.Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: client.user.ID, Connected: true}
 }

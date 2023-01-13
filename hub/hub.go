@@ -1,6 +1,8 @@
 package hub
 
-import uuid "github.com/satori/go.uuid"
+import (
+	uuid "github.com/satori/go.uuid"
+)
 
 var Hub1 = newHub()
 
