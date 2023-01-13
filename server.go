@@ -7,6 +7,7 @@ import (
 	"log"
 	"messenger/config"
 	"messenger/handlers"
+	"messenger/hub"
 	"messenger/internal/common"
 	"os"
 )
@@ -32,8 +33,11 @@ func main() {
 		c.Request = c.Request.WithContext(con)
 		c.Next()
 	})
+	go hub.Hub1.Run()
 
-	r.GET("/ws", handlers.HandleWebsocket)
+	r.GET("/ws", func(c *gin.Context) {
+		hub.ServeWs(c, hub.Hub1)
+	})
 	// REST
 	r.POST("/api/message", handlers.SendMessage)
 	r.POST("/api/register", handlers.Register)

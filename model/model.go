@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/gorilla/websocket"
 	"messenger/graph/customTypes"
 	"time"
 )
@@ -41,11 +40,11 @@ func MessagesToGraph(m []*Message) []*customTypes.Message {
 }
 
 type User struct {
-	ID       int             `json:"id,omitempty" gorm:"primaryKey"`
-	Username string          `json:"username,omitempty"`
-	Password string          `json:"password,omitempty"`
-	Ch       chan Message    `json:"-" gorm:"-"`
-	Ws       *websocket.Conn `json:"-" gorm:"-"`
+	ID       int    `json:"id,omitempty" gorm:"primaryKey"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	//Ch       chan Message    `json:"-" gorm:"-"`
+	//Ws       *websocket.Conn `json:"-" gorm:"-"`
 }
 
 func (u *User) ToGraph() *customTypes.User {

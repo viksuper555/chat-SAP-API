@@ -12,7 +12,7 @@ type MessageBody struct {
 	Message    string `json:"message,omitempty"`
 	Timestamp  int64  `json:"timestamp,omitempty"`
 	//User       *model.User `json:"user"`
-	Recipients []int `json:"recipients,omitempty"`
+	HubId string `json:"hub_id,omitempty"`
 }
 
 type UserBody struct {

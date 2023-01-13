@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/joho/godotenv v1.4.0
 	github.com/pkg/errors v0.8.1
+	github.com/satori/go.uuid v1.2.0
 	github.com/vektah/gqlparser/v2 v2.5.1
 	github.com/vrischmann/envconfig v1.3.0
 	gorm.io/driver/postgres v1.4.5

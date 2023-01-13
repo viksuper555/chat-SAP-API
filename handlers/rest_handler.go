@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"log"
 	"messenger/dto_model"
+	"messenger/hub"
 	"messenger/internal/common"
 	"messenger/model"
-	"messenger/services"
 	"net/http"
 	"time"
 )
@@ -25,14 +26,9 @@ func SendMessage(c *gin.Context) {
 		Text:   msgBody.Message,
 		Date:   time.Unix(msgBody.Timestamp, 0),
 	}
-	for _, rec := range msgBody.Recipients {
-		if u, ok := services.Rm.UMap[rec]; ok {
-			u.Ch <- msg
-		} else {
-			c.Status(http.StatusNotFound)
-			return
-		}
-	}
+	//var hub = Hubs[msgBody.HubId]
+	bytes, err := json.Marshal(msg)
+	hub.Hub1.Broadcast <- bytes
 }
 func Register(c *gin.Context) {
 	ctx := c.Request.Context().Value("ctx").(*common.Context)
