@@ -5,11 +5,12 @@ import (
 )
 
 type MessageBody struct {
-	Id        int    `json:"id"`
-	Type      string `json:"type"`
-	Sender    int    `json:"sender_id,omitempty"`
-	Message   string `json:"message,omitempty"`
-	Timestamp int64  `json:"timestamp,omitempty"`
+	Id         int    `json:"id"`
+	Type       string `json:"type"`
+	SenderId   int    `json:"sender_id,omitempty"`
+	SenderName string `json:"sender_name,omitempty"`
+	Message    string `json:"message,omitempty"`
+	Timestamp  int64  `json:"timestamp,omitempty"`
 	//User       *model.User `json:"user"`
 	Recipients []int `json:"recipients,omitempty"`
 }

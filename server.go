@@ -50,18 +50,6 @@ func main() {
 	log.Fatal(r.Run(":" + port))
 }
 
-//func dbConnect(appConfig config.Config) (*gorm.DB, error) {
-//	appConfigJSON, err := json.MarshalIndent(appConfig, "", "  ")
-//	if err != nil {
-//		log.Printf("Error on writing config as json: %s", err.Error())
-//	}
-//
-//	log.Printf("appconfig: %s\n", string(appConfigJSON))
-//	log.Printf("os env: %s", os.Environ())
-//
-//	return common.InitDb(appConfig)
-//}
-
 func dbDisconnect(dbConn *gorm.DB) {
 	database, err := dbConn.DB()
 	if err != nil {

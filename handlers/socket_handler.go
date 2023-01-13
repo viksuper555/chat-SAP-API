@@ -45,7 +45,7 @@ func HandleWebsocket(c *gin.Context) {
 		return
 	}
 	var user model.User
-	err = db.Where("name = ? AND password = ?", ub.Username, ub.Password).First(&user).Error
+	err = db.Where("username = ? AND password = ?", ub.Username, ub.Password).First(&user).Error
 	//u, err := cache.GetUser(ub.Username)
 	if err != nil {
 		updateJson, _ := json.Marshal(dto_model.MessageBody{Message: "User not found", Type: "error"})
@@ -68,12 +68,11 @@ func HandleWebsocket(c *gin.Context) {
 	for {
 		err = conn.SetReadDeadline(time.Now().Add(time.Second * 5))
 		if err != nil {
-			log.Printf("sad %s\n", err)
+			log.Printf("Couldn't set timeout %s\n", err)
 		}
 		_, bytes, err = conn.ReadMessage()
 		if err != nil {
-			log.Println(err)
-			return
+			continue
 		}
 		if err = json.Unmarshal(bytes, &msg); err != nil {
 			log.Println(err)
@@ -81,9 +80,10 @@ func HandleWebsocket(c *gin.Context) {
 		}
 		// print out that message for clarity
 		fmt.Printf("%s, %s\n", msg.Message, user.ID)
-		msg.Sender = user.ID
+		msg.SenderId = user.ID
+		msg.SenderName = user.Username
 		err = db.Create(&model.Message{
-			Text: msg.Message, UserID: msg.Sender,
+			Text: msg.Message, UserID: msg.SenderId,
 			Date: time.Unix(msg.Timestamp, 0),
 		}).Error
 		if msg.Message != "" {

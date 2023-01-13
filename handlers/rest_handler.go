@@ -21,7 +21,7 @@ func SendMessage(c *gin.Context) {
 	msg := model.Message{
 		ID:     msgBody.Id,
 		Type:   msgBody.Type,
-		UserID: msgBody.Sender,
+		UserID: msgBody.SenderId,
 		Text:   msgBody.Message,
 		Date:   time.Unix(msgBody.Timestamp, 0),
 	}
@@ -46,7 +46,7 @@ func Register(c *gin.Context) {
 		return
 	}
 	var user model.User
-	if err = db.Where("name = ?", ub.Username).First(&user).Error; err != nil {
+	if err = db.Where("name = ?", ub.Username).First(&user).Error; err == nil {
 		c.Status(http.StatusForbidden)
 		log.Println(err)
 		return
