@@ -2,33 +2,33 @@ package services
 
 import (
 	"log"
-	"messenger/graphql"
+	"messenger/model"
 	"sync"
 )
 
 var Rm = NewRoom()
 
 type Room struct {
-	UMap  map[string]*graphql.User // ID: User
+	UMap  map[int]*model.User // ID: User
 	mutex sync.Mutex
 }
 
 func NewRoom() *Room {
 	r := new(Room)
-	r.UMap = make(map[string]*graphql.User)
+	r.UMap = make(map[int]*model.User)
 	return r
 }
 
-func (r *Room) LoginUser(u *graphql.User) {
+func (r *Room) LoginUser(u *model.User) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	log.Printf("User logged in: %s\n", u.Id)
-	r.UMap[u.Id] = u
+	log.Printf("User logged in: %d\n", u.ID)
+	r.UMap[u.ID] = u
 }
 
-func (r *Room) LogoutUser(id string) {
+func (r *Room) LogoutUser(id int) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	log.Printf("User offline: %s\n", id)
+	log.Printf("User offline: %d\n", id)
 	delete(r.UMap, id)
 }

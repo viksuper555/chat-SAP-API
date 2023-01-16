@@ -1,19 +1,15 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/net/websocket"
+	"gorm.io/gorm"
 	"log"
-	"messenger/communication"
 	"messenger/config"
-	"messenger/db"
-	"messenger/graphql"
-	"net/http"
+	"messenger/handlers"
+	"messenger/hub"
+	"messenger/internal/common"
 	"os"
-
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 )
 
 const defaultPort = "8080"
@@ -21,67 +17,50 @@ const defaultPort = "8080"
 func main() {
 	appConfig := config.NewFromEnv()
 
-	log.Print("Connecting to DB...")
-	database, err := dbConnect(appConfig)
+	db, err := common.InitDb(appConfig)
 	if err != nil {
 		log.Fatalf("Failed to init database: %s", err)
 	}
-	defer dbDisconnect(database)
-	log.Print("Connected to DB!")
+	defer dbDisconnect(db)
 
-	go func() {
-		r := gin.Default()
+	r := gin.Default()
 
-		api := r.Group("/api")
-		{
-			api.POST("/message", communication.SendMessage)
-			api.POST("/register", communication.Register)
-		}
+	ctx := &common.Context{
+		Database: db,
+	}
+	r.Use(func(c *gin.Context) {
+		con := context.WithValue(c.Request.Context(), "ctx", ctx)
+		c.Request = c.Request.WithContext(con)
+		c.Next()
+	})
+	go hub.Hub1.Run()
 
-		if err = r.Run("0.0.0.0:5000"); err != nil {
-			return
-		}
-	}()
-	go func() {
-		http.Handle("/ws", websocket.Handler(communication.WebSocketHandler))
+	r.GET("/ws", func(c *gin.Context) {
+		hub.ServeWs(c, hub.Hub1)
+	})
+	// REST
+	r.POST("/api/message", handlers.SendMessage)
+	r.POST("/api/register", handlers.Register)
 
-		if err := http.ListenAndServe("0.0.0.0:9000", nil); err != nil {
-			log.Fatal("ListenAndServe:", err)
-		}
-	}()
+	// GQL
+	r.GET("", handlers.PlaygroundHandler())
+	r.POST("/graph/api", handlers.GraphqlHandler)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
-
-	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: &graphql.Resolver{}}))
-
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
-
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(r.Run(":" + port))
 }
 
-func dbConnect(appConfig config.Config) (db.Database, error) {
-	appConfigJSON, err := json.MarshalIndent(appConfig, "", "  ")
+func dbDisconnect(dbConn *gorm.DB) {
+	database, err := dbConn.DB()
 	if err != nil {
-		log.Printf("Error on writing config as json: %s", err.Error())
+		log.Fatalf("Failed to close database connection: %s", err)
 	}
-
-	log.Printf("appconfig: %s\n", string(appConfigJSON))
-	log.Printf("os env: %s", os.Environ())
-
-	return db.Init(appConfig)
-}
-
-func dbDisconnect(database db.Database) {
-	if database == nil {
-		return
-	}
-	err := database.Close()
+	err = database.Close()
 	if err != nil {
-		log.Printf("Error closing database connection: %s", err.Error())
+		log.Fatalf("Failed to close database connection: %s", err)
 	}
-	log.Print("Successfully closed connection to database")
 }

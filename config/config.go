@@ -14,7 +14,7 @@ type Config struct {
 		Password string `envconfig:"default=postgres"`
 		Name     string `envconfig:"default=notifications"`
 		IP       string `envconfig:"optional"`
-	} `env:"DB_"`
+	}
 }
 
 // NewFromEnv creates a Config from environment values
