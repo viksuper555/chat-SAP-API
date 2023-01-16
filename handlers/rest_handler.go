@@ -26,9 +26,9 @@ func SendMessage(c *gin.Context) {
 		Date:   time.Unix(msgBody.Timestamp, 0),
 	}
 	common.Db.Create(&msg)
-	//var hub = Hubs[msgBody.HubId]
 	bytes, err := json.Marshal(msg)
-	hub.Hub1.Broadcast <- bytes
+	hub.Hub1.Rooms[msgBody.RoomId].Broadcast <- bytes
+	//hub.Hub1.Broadcast <- bytes
 }
 
 func Register(c *gin.Context) {

@@ -56,7 +56,7 @@ func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
-		c.hub.Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: c.user.ID, Connected: false}
+		c.hub.Rooms["global"].Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: c.user.ID, Connected: false}
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -80,7 +80,7 @@ func (c *Client) readPump() {
 		msg.SenderName = c.user.Username
 		msg.Timestamp = time.Now().Unix()
 		msg.Type = "message"
-		c.hub.Broadcast <- msg
+		c.hub.Rooms["global"].Broadcast <- msg
 	}
 }
 
@@ -186,7 +186,7 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	go client.writePump()
 	go client.readPump()
 
-	hub.Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: client.user.ID, Connected: true}
+	hub.Rooms["global"].Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: client.user.ID, Connected: true}
 }
 
 func SaveToDb(msgBody *dto_model.MessageBody) {

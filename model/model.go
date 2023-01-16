@@ -6,9 +6,9 @@ import (
 )
 
 type base struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
+	CreatedAt time.Time  `gorm:"not null" json:"created_at,omitempty" `
+	UpdatedAt time.Time  `gorm:"not null" json:"updated_at,omitempty"`
+	DeletedAt *time.Time `gorm:"not null" json:"deleted_at,omitempty" `
 }
 
 type Message struct {
@@ -18,7 +18,7 @@ type Message struct {
 	Date   time.Time `gorm:"not null" json:"date,omitempty" `
 	UserID int
 	User   *User `json:"user" gorm:"foreignkey:id"`
-	//Timestamp int64  `gorm:"not null" json:"timestamp,omitempty" `
+	Room   *Room `gorm:"type:varchar(255)" json:"room,omitempty"`
 }
 
 func (m *Message) ToGraph() *customTypes.Message {
@@ -27,6 +27,7 @@ func (m *Message) ToGraph() *customTypes.Message {
 		Text:   m.Text,
 		Date:   m.Date,
 		UserID: m.UserID,
+		RoomId: m.Room.ID,
 	}
 }
 
@@ -42,8 +43,6 @@ type User struct {
 	ID       int    `json:"id,omitempty" gorm:"primaryKey"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
-	//Ch       chan Message    `json:"-" gorm:"-"`
-	//Ws       *websocket.Conn `json:"-" gorm:"-"`
 }
 
 func (u *User) ToGraph() *customTypes.User {
@@ -57,6 +56,31 @@ func UsersToGraph(u []*User) []*customTypes.User {
 	g := make([]*customTypes.User, len(u))
 	for i := range u {
 		g[i] = u[i].ToGraph()
+	}
+	return g
+}
+
+type Room struct {
+	base
+	ID    string  `gorm:"type:varchar(255)" json:"text,omitempty"`
+	Users []*User `json:"user" gorm:"many2many:id"`
+}
+
+func (r *Room) ToGraph() *customTypes.Room {
+	g := make([]int, len(r.Users))
+	for i := range r.Users {
+		g[i] = r.Users[i].ID
+	}
+	return &customTypes.Room{
+		ID:      r.ID,
+		UserIds: g,
+	}
+}
+
+func RoomsToGraph(m []*Room) []*customTypes.Room {
+	g := make([]*customTypes.Room, len(m))
+	for i := range m {
+		g[i] = m[i].ToGraph()
 	}
 	return g
 }

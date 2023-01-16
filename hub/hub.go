@@ -5,11 +5,10 @@ import (
 )
 
 var Hub1 = newHub()
-var Hubs = make(map[string]Hub)
 
-// Hub maintains the set of active Clients and broadcasts messages to the
+// Room maintains the set of active Clients and broadcasts messages to the
 // Clients.
-type Hub struct {
+type Room struct {
 	uuid string
 	// Registered Clients.
 	Clients map[*Client]bool
@@ -24,8 +23,32 @@ type Hub struct {
 	unregister chan *Client
 }
 
+type Hub struct {
+	// Registered Clients.
+	Clients map[*Client]bool
+	// Open Rooms.
+	Rooms map[string]*Room
+
+	// Register requests from the Clients.
+	register chan *Client
+
+	// Unregister requests from Clients.
+	unregister chan *Client
+}
+
 func newHub() *Hub {
+	room := newRoom()
+	room.uuid = "global"
 	return &Hub{
+		register:   room.register,
+		unregister: room.unregister,
+		Clients:    room.Clients,
+		Rooms:      map[string]*Room{room.uuid: room},
+	}
+}
+
+func newRoom() *Room {
+	return &Room{
 		uuid:       uuid.NewV4().String(),
 		Broadcast:  make(chan interface{}),
 		register:   make(chan *Client),
@@ -44,7 +67,7 @@ func (h *Hub) Run() {
 				delete(h.Clients, client)
 				close(client.send)
 			}
-		case message := <-h.Broadcast:
+		case message := <-h.Rooms["global"].Broadcast:
 			for client := range h.Clients {
 				select {
 				case client.send <- message:
