@@ -23,6 +23,7 @@ func SendMessage(c *gin.Context) {
 		ID:     msgBody.Id,
 		UserID: msgBody.SenderId,
 		Text:   msgBody.Message,
+		RoomID: msgBody.RoomId,
 		Date:   time.Unix(msgBody.Timestamp, 0),
 	}
 	common.Db.Create(&msg)

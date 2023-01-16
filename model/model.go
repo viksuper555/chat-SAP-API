@@ -40,7 +40,7 @@ func (m *Message) ToGraph() *customTypes.Message {
 		Text:   m.Text,
 		Date:   m.Date,
 		UserID: m.UserID,
-		RoomID: m.Room.ID,
+		RoomID: m.RoomID,
 	}
 }
 
