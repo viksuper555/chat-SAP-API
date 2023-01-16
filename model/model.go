@@ -14,7 +14,6 @@ type base struct {
 type Message struct {
 	base
 	ID     int       `gorm:"primaryKey" json:"id" `
-	Type   string    `gorm:"-" json:"type"`
 	Text   string    `gorm:"type:varchar(255)" json:"text,omitempty"`
 	Date   time.Time `gorm:"not null" json:"date,omitempty" `
 	UserID int

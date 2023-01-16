@@ -75,6 +75,7 @@ func (c *Client) readPump() {
 			log.Println(err)
 			return
 		}
+		SaveToDb(&msg)
 		msg.SenderId = c.user.ID
 		msg.SenderName = c.user.Username
 		msg.Timestamp = time.Now().Unix()
@@ -186,4 +187,13 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	go client.readPump()
 
 	hub.Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: client.user.ID, Connected: true}
+}
+
+func SaveToDb(msgBody *dto_model.MessageBody) {
+	msg := model.Message{
+		UserID: msgBody.SenderId,
+		Text:   msgBody.Message,
+		Date:   time.Unix(msgBody.Timestamp, 1000),
+	}
+	common.Db.Create(&msg)
 }

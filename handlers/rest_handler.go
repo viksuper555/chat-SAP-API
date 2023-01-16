@@ -21,15 +21,16 @@ func SendMessage(c *gin.Context) {
 	}
 	msg := model.Message{
 		ID:     msgBody.Id,
-		Type:   msgBody.Type,
 		UserID: msgBody.SenderId,
 		Text:   msgBody.Message,
 		Date:   time.Unix(msgBody.Timestamp, 0),
 	}
+	common.Db.Create(&msg)
 	//var hub = Hubs[msgBody.HubId]
 	bytes, err := json.Marshal(msg)
 	hub.Hub1.Broadcast <- bytes
 }
+
 func Register(c *gin.Context) {
 	ctx := c.Request.Context().Value("ctx").(*common.Context)
 	db := ctx.Database

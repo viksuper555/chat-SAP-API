@@ -5,6 +5,7 @@ import (
 )
 
 var Hub1 = newHub()
+var Hubs = make(map[string]Hub)
 
 // Hub maintains the set of active Clients and broadcasts messages to the
 // Clients.
