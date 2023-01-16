@@ -30,6 +30,7 @@ func InitDb(cfg config.Config) (*gorm.DB, error) {
 	models := []interface{}{
 		&model.User{},
 		&model.Message{},
+		&model.Room{},
 	}
 	for _, m := range models {
 		log.Printf("Auto migration of m")

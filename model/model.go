@@ -5,20 +5,33 @@ import (
 	"time"
 )
 
-type base struct {
-	CreatedAt time.Time  `gorm:"not null" json:"created_at,omitempty" `
-	UpdatedAt time.Time  `gorm:"not null" json:"updated_at,omitempty"`
-	DeletedAt *time.Time `gorm:"not null" json:"deleted_at,omitempty" `
-}
+//type base struct {
+//	CreatedAt time.Time  `gorm:"not null" json:"created_at,omitempty" `
+//	UpdatedAt time.Time  `gorm:"not null" json:"updated_at,omitempty"`
+//	DeletedAt *time.Time `gorm:"not null" json:"deleted_at,omitempty" `
+//}
 
+// Message belongs to `User`, `UserID` is the foreign key
 type Message struct {
-	base
 	ID     int       `gorm:"primaryKey" json:"id" `
 	Text   string    `gorm:"type:varchar(255)" json:"text,omitempty"`
 	Date   time.Time `gorm:"not null" json:"date,omitempty" `
 	UserID int
-	User   *User `json:"user" gorm:"foreignkey:id"`
-	Room   *Room `gorm:"type:varchar(255)" json:"room,omitempty"`
+	User   User `json:"user"`
+	RoomID string
+	Room   Room `json:"room,omitempty"`
+}
+
+type User struct {
+	ID       int    `json:"id,omitempty" gorm:"primaryKey"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Rooms    []Room `gorm:"many2many:user_room" json:"rooms"`
+}
+
+type Room struct {
+	ID    string  `json:"id" gorm:"type:varchar(255); primaryKey"`
+	Users []*User `gorm:"many2many:user_room" json:"users"`
 }
 
 func (m *Message) ToGraph() *customTypes.Message {
@@ -27,7 +40,7 @@ func (m *Message) ToGraph() *customTypes.Message {
 		Text:   m.Text,
 		Date:   m.Date,
 		UserID: m.UserID,
-		RoomId: m.Room.ID,
+		RoomID: m.Room.ID,
 	}
 }
 
@@ -37,12 +50,6 @@ func MessagesToGraph(m []*Message) []*customTypes.Message {
 		g[i] = m[i].ToGraph()
 	}
 	return g
-}
-
-type User struct {
-	ID       int    `json:"id,omitempty" gorm:"primaryKey"`
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
 }
 
 func (u *User) ToGraph() *customTypes.User {
@@ -58,12 +65,6 @@ func UsersToGraph(u []*User) []*customTypes.User {
 		g[i] = u[i].ToGraph()
 	}
 	return g
-}
-
-type Room struct {
-	base
-	ID    string  `gorm:"type:varchar(255)" json:"text,omitempty"`
-	Users []*User `json:"user" gorm:"many2many:id"`
 }
 
 func (r *Room) ToGraph() *customTypes.Room {

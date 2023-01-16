@@ -5,7 +5,8 @@ type Message {
   text: String!
   date: Time!
   user: User!
-  userId: ID!
+  user_id: ID!
+  room_id: String!
 }
 
 type User {
@@ -16,6 +17,11 @@ type User {
 input NewMessage {
   userId: ID!
   text: String!
+  roomId: String!
+}
+
+input NewRoom {
+  user_ids: [ID!]!
 }
 
 input UserPass {
@@ -25,6 +31,7 @@ input UserPass {
 
 type Mutation {
   createMessage(input: NewMessage!): Message!
+  createRoom(input: NewRoom!): Room!
   createUser(input: UserPass!): User!
   login(input: UserPass!): Boolean!
 }
@@ -35,4 +42,13 @@ type Query {
   getMessage(messageId: ID!): Message!
   getUsers: [User!]!
   getUser(userId: ID!): User!
+  getRooms(userId: ID!): [Room!]!
+  getRoom(roomId: String!): Room!
+  getRoomMessages(roomId: String!): [Message!]!
+}
+
+type Room {
+    id:      String!
+    users:   [User!]!
+    user_ids: [ID!]!
 }

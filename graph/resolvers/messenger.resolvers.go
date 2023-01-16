@@ -10,6 +10,8 @@ import (
 	"messenger/graph/generated"
 	"messenger/model"
 	"time"
+
+	"github.com/satori/go.uuid"
 )
 
 // CreateMessage is the resolver for the createMessage field.
@@ -17,6 +19,7 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.
 	msg := &model.Message{
 		Text:   input.Text,
 		UserID: input.UserID,
+		RoomID: input.RoomID,
 		Date:   time.Now(),
 	}
 	err := r.DB.Create(&msg).Error
@@ -28,6 +31,31 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.
 		ID:   msg.ID,
 		Text: input.Text,
 		Date: time.Now(),
+	}
+	return res, nil
+}
+
+// CreateRoom is the resolver for the createRoom field.
+func (r *mutationResolver) CreateRoom(ctx context.Context, input customTypes.NewRoom) (*customTypes.Room, error) {
+	var users []*model.User
+	err := r.DB.Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+
+	rm := &model.Room{
+		ID:    uuid.NewV4().String(),
+		Users: users,
+	}
+
+	err = r.DB.Create(&rm).Error
+	if err != nil {
+		return nil, err
+	}
+
+	res := &customTypes.Room{
+		ID:    rm.ID,
+		Users: model.UsersToGraph(rm.Users),
 	}
 	return res, nil
 }
@@ -118,6 +146,36 @@ func (r *queryResolver) GetUser(ctx context.Context, userID int) (*customTypes.U
 		return nil, err
 	}
 	return u.ToGraph(), nil
+}
+
+// GetRooms is the resolver for the getRooms field.
+func (r *queryResolver) GetRooms(ctx context.Context, userID int) ([]*customTypes.Room, error) {
+	var rooms []*model.Room
+	err := r.DB.Find(&rooms).Preload("Users").Error
+	if err != nil {
+		return nil, err
+	}
+	return model.RoomsToGraph(rooms), nil
+}
+
+// GetRoom is the resolver for the getRoom field.
+func (r *queryResolver) GetRoom(ctx context.Context, roomID string) (*customTypes.Room, error) {
+	var room model.Room
+	err := r.DB.Where(&model.Room{ID: roomID}).Preload("Users").First(&room).Error
+	if err != nil {
+		return nil, err
+	}
+	return room.ToGraph(), nil
+}
+
+// GetRoomMessages is the resolver for the getRoomMessages field.
+func (r *queryResolver) GetRoomMessages(ctx context.Context, roomID string) ([]*customTypes.Message, error) {
+	var messages []*model.Message
+	err := r.DB.Where(&model.Message{RoomID: roomID}).Find(&messages).Error
+	if err != nil {
+		return nil, err
+	}
+	return model.MessagesToGraph(messages), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

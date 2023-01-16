@@ -194,6 +194,7 @@ func SaveToDb(msgBody *dto_model.MessageBody) {
 		UserID: msgBody.SenderId,
 		Text:   msgBody.Message,
 		Date:   time.Unix(msgBody.Timestamp, 1000),
+		RoomID: msgBody.RoomId,
 	}
 	common.Db.Create(&msg)
 }
