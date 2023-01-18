@@ -157,8 +157,6 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	}
 
 	client := &Client{hub: hub, conn: conn, send: make(chan interface{}, 256)}
-	hub.register <- client
-
 	//region Initial Login
 	_, bytes, err := conn.ReadMessage()
 	if err != nil {
@@ -182,6 +180,7 @@ func ServeWs(c *gin.Context, hub *Hub) {
 		return
 	}
 	client.user = &user
+	hub.register <- client
 
 	roomIds, err := getUserRoomIds(user.ID)
 	if err != nil {

@@ -70,3 +70,14 @@ func Register(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, u)
 }
+
+func Join(c *gin.Context) {
+	var jb dto_model.JoinRoomBody
+	err := c.BindJSON(&jb)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		log.Println(err)
+		return
+	}
+	//hub.MainHub.Clients
+}

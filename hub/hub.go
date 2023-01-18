@@ -87,23 +87,22 @@ func (h *Hub) Run() {
 	}
 }
 
-func (h *Room) Run() {
+func (r *Room) Run() {
 	for {
 		select {
-		case client := <-h.register:
-			h.Clients[client] = true
-		case client := <-h.unregister:
-			if _, ok := h.Clients[client]; ok {
-				delete(h.Clients, client)
-				close(client.send)
+		case client := <-r.register:
+			r.Clients[client] = true
+		case client := <-r.unregister:
+			if _, ok := r.Clients[client]; ok {
+				delete(r.Clients, client)
 			}
-		case message := <-h.Broadcast:
-			for client := range h.Clients {
+		case message := <-r.Broadcast:
+			for client := range r.Clients {
 				select {
 				case client.send <- message:
 				default:
 					close(client.send)
-					delete(h.Clients, client)
+					delete(r.Clients, client)
 				}
 			}
 		}

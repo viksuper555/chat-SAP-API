@@ -19,6 +19,10 @@ type UserBody struct {
 	model.User `json:"user,omitempty"`
 	Type       string `json:"type,omitempty"`
 }
+type JoinRoomBody struct {
+	UserId int    `json:"user_id"`
+	RoomId string `json:"room_id"`
+}
 
 type DataOnLogin struct {
 	model.User  `json:"user,omitempty"`
