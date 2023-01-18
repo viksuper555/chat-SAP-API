@@ -421,6 +421,7 @@ input NewMessage {
 }
 
 input NewRoom {
+  id: String!
   user_ids: [ID!]!
 }
 
@@ -3862,13 +3863,21 @@ func (ec *executionContext) unmarshalInputNewRoom(ctx context.Context, obj inter
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"user_ids"}
+	fieldsInOrder := [...]string{"id", "user_ids"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "user_ids":
 			var err error
 

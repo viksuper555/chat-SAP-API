@@ -55,8 +55,18 @@ type Client struct {
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
+		room_ids, err := getUserRoomIds(c.user.ID)
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+			}
+		}
+		for _, rId := range room_ids {
+			c.hub.Rooms[rId].unregister <- c
+		}
+
 		c.conn.Close()
-		c.hub.Rooms["global"].Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: c.user.ID, Connected: false}
+		c.hub.Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: c.user.ID, Connected: false}
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -80,7 +90,10 @@ func (c *Client) readPump() {
 		msg.SenderName = c.user.Username
 		msg.Timestamp = time.Now().Unix()
 		msg.Type = "message"
-		c.hub.Rooms["global"].Broadcast <- msg
+		r, ok := c.hub.Rooms[msg.RoomId]
+		if ok {
+			r.Broadcast <- msg
+		}
 	}
 }
 
@@ -142,6 +155,7 @@ func ServeWs(c *gin.Context, hub *Hub) {
 		log.Println(err)
 		return
 	}
+
 	client := &Client{hub: hub, conn: conn, send: make(chan interface{}, 256)}
 	hub.register <- client
 
@@ -169,7 +183,18 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	}
 	client.user = &user
 
-	var onlineUsers = getOnlineUsers(Hub1)
+	roomIds, err := getUserRoomIds(user.ID)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	for _, rId := range roomIds {
+		hub.Rooms[rId].register <- client
+	}
+
+	onlineUsers, _ := getOnlineUsers(MainHub)
 	updateJson, err := json.Marshal(dto_model.DataOnLogin{User: user, Type: "login", OnlineUsers: onlineUsers})
 	if err != nil {
 		log.Println(err)
@@ -178,7 +203,6 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	if err := conn.WriteMessage(websocket.TextMessage, updateJson); err != nil {
 		log.Println(err)
 	}
-	//client.send <- updateJson
 	// endregion
 
 	// Allow collection of memory referenced by the caller by doing all work in
@@ -186,7 +210,7 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	go client.writePump()
 	go client.readPump()
 
-	hub.Rooms["global"].Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: client.user.ID, Connected: true}
+	hub.Broadcast <- dto_model.ActiveUsersUpdate{Type: "online", UserId: client.user.ID, Connected: true}
 }
 
 func SaveToDb(msgBody *dto_model.MessageBody) {

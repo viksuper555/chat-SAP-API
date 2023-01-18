@@ -28,8 +28,8 @@ func SendMessage(c *gin.Context) {
 	}
 	common.Db.Create(&msg)
 	bytes, err := json.Marshal(msg)
-	hub.Hub1.Rooms[msgBody.RoomId].Broadcast <- bytes
-	//hub.Hub1.Broadcast <- bytes
+	hub.MainHub.Rooms[msgBody.RoomId].Broadcast <- bytes
+	//hub.MainHub.Broadcast <- bytes
 }
 
 func Register(c *gin.Context) {
@@ -49,9 +49,17 @@ func Register(c *gin.Context) {
 		log.Println(err)
 		return
 	}
+	var gr model.Room
+	if err = db.Where("id = ?", "global").First(&gr).Error; err != nil {
+		c.Status(http.StatusForbidden)
+		log.Println(err)
+		return
+	}
+
 	u := &model.User{
 		Username: ub.Username,
 		Password: ub.Password,
+		Rooms:    []model.Room{gr},
 	}
 
 	err = db.Create(&u).Error

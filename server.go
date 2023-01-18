@@ -33,10 +33,10 @@ func main() {
 		c.Request = c.Request.WithContext(con)
 		c.Next()
 	})
-	go hub.Hub1.Run()
+	go hub.MainHub.Run()
 
 	r.GET("/ws", func(c *gin.Context) {
-		hub.ServeWs(c, hub.Hub1)
+		hub.ServeWs(c, hub.MainHub)
 	})
 	// REST
 	r.POST("/api/message", handlers.SendMessage)

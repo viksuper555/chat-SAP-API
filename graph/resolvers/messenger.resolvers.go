@@ -43,8 +43,11 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input customTypes.New
 		return nil, err
 	}
 
+	if input.ID == "" {
+		input.ID = uuid.NewV4().String()
+	}
 	rm := &model.Room{
-		ID:    uuid.NewV4().String(),
+		ID:    input.ID,
 		Users: users,
 	}
 
@@ -151,7 +154,8 @@ func (r *queryResolver) GetUser(ctx context.Context, userID int) (*customTypes.U
 // GetRooms is the resolver for the getRooms field.
 func (r *queryResolver) GetRooms(ctx context.Context, userID int) ([]*customTypes.Room, error) {
 	var rooms []*model.Room
-	err := r.DB.Find(&rooms).Preload("Users").Error
+
+	err := r.DB.Preload("Users").Where("id IN (SELECT room_id FROM user_room WHERE user_id = ?)", userID).Find(&rooms).Error
 	if err != nil {
 		return nil, err
 	}

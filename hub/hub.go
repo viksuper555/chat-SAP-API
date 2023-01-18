@@ -4,7 +4,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var Hub1 = newHub()
+var MainHub = newHub()
 
 // Room maintains the set of active Clients and broadcasts messages to the
 // Clients.
@@ -29,6 +29,7 @@ type Hub struct {
 	// Open Rooms.
 	Rooms map[string]*Room
 
+	Broadcast chan interface{}
 	// Register requests from the Clients.
 	register chan *Client
 
@@ -37,13 +38,16 @@ type Hub struct {
 }
 
 func newHub() *Hub {
-	room := newRoom()
-	room.uuid = "global"
+	g := newRoom()
+	g.uuid = "global"
+	vp := newRoom()
+	vp.uuid = "vp"
 	return &Hub{
-		register:   room.register,
-		unregister: room.unregister,
-		Clients:    room.Clients,
-		Rooms:      map[string]*Room{room.uuid: room},
+		Broadcast:  make(chan interface{}),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		Clients:    make(map[*Client]bool),
+		Rooms:      map[string]*Room{g.uuid: g, vp.uuid: vp},
 	}
 }
 
@@ -58,6 +62,9 @@ func newRoom() *Room {
 }
 
 func (h *Hub) Run() {
+	for i := range h.Rooms {
+		go h.Rooms[i].Run()
+	}
 	for {
 		select {
 		case client := <-h.register:
@@ -67,7 +74,30 @@ func (h *Hub) Run() {
 				delete(h.Clients, client)
 				close(client.send)
 			}
-		case message := <-h.Rooms["global"].Broadcast:
+		case message := <-h.Broadcast:
+			for client := range h.Clients {
+				select {
+				case client.send <- message:
+				default:
+					close(client.send)
+					delete(h.Clients, client)
+				}
+			}
+		}
+	}
+}
+
+func (h *Room) Run() {
+	for {
+		select {
+		case client := <-h.register:
+			h.Clients[client] = true
+		case client := <-h.unregister:
+			if _, ok := h.Clients[client]; ok {
+				delete(h.Clients, client)
+				close(client.send)
+			}
+		case message := <-h.Broadcast:
 			for client := range h.Clients {
 				select {
 				case client.send <- message:

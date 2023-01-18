@@ -22,7 +22,8 @@ type NewMessage struct {
 }
 
 type NewRoom struct {
-	UserIds []int `json:"user_ids"`
+	ID      string `json:"id"`
+	UserIds []int  `json:"user_ids"`
 }
 
 type Room struct {
