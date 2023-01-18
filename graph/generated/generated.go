@@ -74,6 +74,7 @@ type ComplexityRoot struct {
 
 	Room struct {
 		ID      func(childComplexity int) int
+		Name    func(childComplexity int) int
 		UserIds func(childComplexity int) int
 		Users   func(childComplexity int) int
 	}
@@ -299,6 +300,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Room.ID(childComplexity), true
 
+	case "Room.name":
+		if e.complexity.Room.Name == nil {
+			break
+		}
+
+		return e.complexity.Room.Name(childComplexity), true
+
 	case "Room.user_ids":
 		if e.complexity.Room.UserIds == nil {
 			break
@@ -450,6 +458,7 @@ type Query {
 
 type Room {
     id:      String!
+    name: String!
     users:   [User!]!
     user_ids: [ID!]!
 }
@@ -1044,6 +1053,8 @@ func (ec *executionContext) fieldContext_Mutation_createRoom(ctx context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Room_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Room_name(ctx, field)
 			case "users":
 				return ec.fieldContext_Room_users(ctx, field)
 			case "user_ids":
@@ -1530,6 +1541,8 @@ func (ec *executionContext) fieldContext_Query_getRooms(ctx context.Context, fie
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Room_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Room_name(ctx, field)
 			case "users":
 				return ec.fieldContext_Room_users(ctx, field)
 			case "user_ids":
@@ -1593,6 +1606,8 @@ func (ec *executionContext) fieldContext_Query_getRoom(ctx context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Room_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Room_name(ctx, field)
 			case "users":
 				return ec.fieldContext_Room_users(ctx, field)
 			case "user_ids":
@@ -1845,6 +1860,50 @@ func (ec *executionContext) _Room_id(ctx context.Context, field graphql.Collecte
 }
 
 func (ec *executionContext) fieldContext_Room_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Room_name(ctx context.Context, field graphql.CollectedField, obj *customTypes.Room) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Room_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Room_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Room",
 		Field:      field,
@@ -4304,6 +4363,13 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 
 			out.Values[i] = ec._Room_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+
+			out.Values[i] = ec._Room_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

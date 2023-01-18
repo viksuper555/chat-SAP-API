@@ -70,3 +70,59 @@ func Register(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, u)
 }
+
+func Join(c *gin.Context) {
+	var jb dto_model.JoinRoomBody
+	err := c.BindJSON(&jb)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		log.Println(err)
+		return
+	}
+	client, ok := hub.MainHub.Clients[jb.UserId]
+	if !ok {
+		c.Status(http.StatusForbidden)
+		return
+	}
+	room, ok := hub.MainHub.Rooms[jb.RoomId]
+	if !ok {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	room.Clients[client] = true
+	err = common.AddUserToRoom(common.Db, jb.UserId, jb.RoomId)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		log.Println(err)
+		return
+	}
+}
+
+func Leave(c *gin.Context) {
+	var jb dto_model.JoinRoomBody
+	err := c.BindJSON(&jb)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		log.Println(err)
+		return
+	}
+	client, ok := hub.MainHub.Clients[jb.UserId]
+	if !ok {
+		c.Status(http.StatusForbidden)
+		return
+	}
+	room, ok := hub.MainHub.Rooms[jb.RoomId]
+	if !ok {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	delete(room.Clients, client)
+	err = common.RemoveUserFromRoom(common.Db, jb.UserId, jb.RoomId)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		log.Println(err)
+		return
+	}
+}

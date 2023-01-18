@@ -50,6 +50,7 @@ type Query {
 
 type Room {
     id:      String!
+    name: String!
     users:   [User!]!
     user_ids: [ID!]!
 }

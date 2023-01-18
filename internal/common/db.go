@@ -51,3 +51,47 @@ func GetDbUrl(cfg config.Config) string {
 	db := cfg.Database
 	return fmt.Sprintf("%s://%s:%s@%s/%s", db.Dialect, db.User, db.Password, db.IP, db.Name)
 }
+
+func GetUserRoomIds(db *gorm.DB, userId int) ([]string, error) {
+	roomIds := make([]string, 0)
+	if err := db.Table("user_room").Distinct("room_id").Where("user_id = ?", userId).Find(&roomIds).Error; err != nil {
+		return nil, err
+	}
+	return roomIds, nil
+}
+
+func AddUserToRoom(db *gorm.DB, userId int, roomId string) error {
+	var u model.User
+	err := db.Where(&model.User{ID: userId}).First(&u).Error
+	if err != nil {
+		return err
+	}
+	var r model.Room
+	err = db.Where(&model.Room{ID: roomId}).First(&r).Error
+	if err != nil {
+		return err
+	}
+	err = db.Model(&r).Association("Users").Append(&u)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func RemoveUserFromRoom(db *gorm.DB, userId int, roomId string) error {
+	var u model.User
+	err := db.Where(&model.User{ID: userId}).First(&u).Error
+	if err != nil {
+		return err
+	}
+	var r model.Room
+	err = db.Where(&model.Room{ID: roomId}).First(&r).Error
+	if err != nil {
+		return err
+	}
+	err = db.Model(&r).Association("Users").Delete(&u)
+	if err != nil {
+		return err
+	}
+	return nil
+}

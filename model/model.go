@@ -31,6 +31,7 @@ type User struct {
 
 type Room struct {
 	ID    string  `json:"id" gorm:"type:varchar(255); primaryKey"`
+	Name  string  `json:"name,omitempty"`
 	Users []*User `gorm:"many2many:user_room" json:"users"`
 }
 
@@ -68,13 +69,14 @@ func UsersToGraph(u []*User) []*customTypes.User {
 }
 
 func (r *Room) ToGraph() *customTypes.Room {
-	g := make([]int, len(r.Users))
+	uIds := make([]int, len(r.Users))
 	for i := range r.Users {
-		g[i] = r.Users[i].ID
+		uIds[i] = r.Users[i].ID
 	}
 	return &customTypes.Room{
 		ID:      r.ID,
-		UserIds: g,
+		UserIds: uIds,
+		Name:    r.Name,
 	}
 }
 

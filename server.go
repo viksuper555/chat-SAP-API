@@ -41,6 +41,8 @@ func main() {
 	// REST
 	r.POST("/api/message", handlers.SendMessage)
 	r.POST("/api/register", handlers.Register)
+	r.POST("/api/join", handlers.Join)
+	r.POST("/api/leave", handlers.Leave)
 
 	// GQL
 	r.GET("", handlers.PlaygroundHandler())

@@ -25,7 +25,7 @@ type Room struct {
 
 type Hub struct {
 	// Registered Clients.
-	Clients map[*Client]bool
+	Clients map[int]*Client
 	// Open Rooms.
 	Rooms map[string]*Room
 
@@ -46,7 +46,7 @@ func newHub() *Hub {
 		Broadcast:  make(chan interface{}),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		Clients:    make(map[*Client]bool),
+		Clients:    make(map[int]*Client),
 		Rooms:      map[string]*Room{g.uuid: g, vp.uuid: vp},
 	}
 }
@@ -68,42 +68,41 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.Clients[client] = true
+			h.Clients[client.user.ID] = client
 		case client := <-h.unregister:
-			if _, ok := h.Clients[client]; ok {
-				delete(h.Clients, client)
+			if _, ok := h.Clients[client.user.ID]; ok {
+				delete(h.Clients, client.user.ID)
 				close(client.send)
 			}
 		case message := <-h.Broadcast:
-			for client := range h.Clients {
+			for _, client := range h.Clients {
 				select {
 				case client.send <- message:
 				default:
 					close(client.send)
-					delete(h.Clients, client)
+					delete(h.Clients, client.user.ID)
 				}
 			}
 		}
 	}
 }
 
-func (h *Room) Run() {
+func (r *Room) Run() {
 	for {
 		select {
-		case client := <-h.register:
-			h.Clients[client] = true
-		case client := <-h.unregister:
-			if _, ok := h.Clients[client]; ok {
-				delete(h.Clients, client)
-				close(client.send)
+		case client := <-r.register:
+			r.Clients[client] = true
+		case client := <-r.unregister:
+			if _, ok := r.Clients[client]; ok {
+				delete(r.Clients, client)
 			}
-		case message := <-h.Broadcast:
-			for client := range h.Clients {
+		case message := <-r.Broadcast:
+			for client := range r.Clients {
 				select {
 				case client.send <- message:
 				default:
 					close(client.send)
-					delete(h.Clients, client)
+					delete(r.Clients, client)
 				}
 			}
 		}

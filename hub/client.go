@@ -21,7 +21,7 @@ const (
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
 
-	// Send pings to peer with this period. Must be less than pongWait.
+	// send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
@@ -55,7 +55,7 @@ type Client struct {
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
-		room_ids, err := getUserRoomIds(c.user.ID)
+		room_ids, err := common.GetUserRoomIds(DB, c.user.ID)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -157,8 +157,6 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	}
 
 	client := &Client{hub: hub, conn: conn, send: make(chan interface{}, 256)}
-	hub.register <- client
-
 	//region Initial Login
 	_, bytes, err := conn.ReadMessage()
 	if err != nil {
@@ -182,8 +180,9 @@ func ServeWs(c *gin.Context, hub *Hub) {
 		return
 	}
 	client.user = &user
+	hub.register <- client
 
-	roomIds, err := getUserRoomIds(user.ID)
+	roomIds, err := common.GetUserRoomIds(DB, user.ID)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)

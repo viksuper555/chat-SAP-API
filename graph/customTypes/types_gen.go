@@ -28,6 +28,7 @@ type NewRoom struct {
 
 type Room struct {
 	ID      string  `json:"id"`
+	Name    string  `json:"name"`
 	Users   []*User `json:"users"`
 	UserIds []int   `json:"user_ids"`
 }
