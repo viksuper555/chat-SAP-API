@@ -24,15 +24,16 @@ type Message struct {
 
 type User struct {
 	ID       int    `json:"id,omitempty" gorm:"primaryKey"`
-	Username string `json:"username,omitempty"`
+	Username string `json:"name,omitempty"`
 	Password string `json:"password,omitempty"`
 	Rooms    []Room `gorm:"many2many:user_room" json:"rooms"`
 }
 
 type Room struct {
-	ID    string  `json:"id" gorm:"type:varchar(255); primaryKey"`
-	Name  string  `json:"name,omitempty"`
-	Users []*User `gorm:"many2many:user_room" json:"users"`
+	ID       string     `json:"id" gorm:"type:varchar(255); primaryKey"`
+	Name     string     `json:"name,omitempty"`
+	Users    []*User    `gorm:"many2many:user_room" json:"users"`
+	Messages []*Message `gorm:"foreignKey:RoomID" json:"messages"`
 }
 
 func (m *Message) ToGraph() *customTypes.Message {
@@ -74,9 +75,11 @@ func (r *Room) ToGraph() *customTypes.Room {
 		uIds[i] = r.Users[i].ID
 	}
 	return &customTypes.Room{
-		ID:      r.ID,
-		UserIds: uIds,
-		Name:    r.Name,
+		ID:       r.ID,
+		UserIds:  uIds,
+		Users:    UsersToGraph(r.Users),
+		Name:     r.Name,
+		Messages: MessagesToGraph(r.Messages),
 	}
 }
 

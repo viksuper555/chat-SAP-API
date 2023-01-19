@@ -5,8 +5,8 @@ type Message {
   text: String!
   date: Time!
   user: User!
-  user_id: ID!
-  room_id: String!
+  userId: ID!
+  roomId: String!
 }
 
 type User {
@@ -22,7 +22,7 @@ input NewMessage {
 
 input NewRoom {
   id: String!
-  user_ids: [ID!]!
+  userIds: [ID!]!
 }
 
 input UserPass {
@@ -51,6 +51,7 @@ type Query {
 type Room {
     id:      String!
     name: String!
+    messages: [Message!]!
     users:   [User!]!
-    user_ids: [ID!]!
+    userIds: [ID!]!
 }

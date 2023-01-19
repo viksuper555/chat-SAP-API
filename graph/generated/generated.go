@@ -73,10 +73,11 @@ type ComplexityRoot struct {
 	}
 
 	Room struct {
-		ID      func(childComplexity int) int
-		Name    func(childComplexity int) int
-		UserIds func(childComplexity int) int
-		Users   func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Messages func(childComplexity int) int
+		Name     func(childComplexity int) int
+		UserIds  func(childComplexity int) int
+		Users    func(childComplexity int) int
 	}
 
 	User struct {
@@ -131,7 +132,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.ID(childComplexity), true
 
-	case "Message.room_id":
+	case "Message.roomId":
 		if e.complexity.Message.RoomID == nil {
 			break
 		}
@@ -152,7 +153,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.User(childComplexity), true
 
-	case "Message.user_id":
+	case "Message.userId":
 		if e.complexity.Message.UserID == nil {
 			break
 		}
@@ -300,6 +301,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Room.ID(childComplexity), true
 
+	case "Room.messages":
+		if e.complexity.Room.Messages == nil {
+			break
+		}
+
+		return e.complexity.Room.Messages(childComplexity), true
+
 	case "Room.name":
 		if e.complexity.Room.Name == nil {
 			break
@@ -307,7 +315,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Room.Name(childComplexity), true
 
-	case "Room.user_ids":
+	case "Room.userIds":
 		if e.complexity.Room.UserIds == nil {
 			break
 		}
@@ -413,8 +421,8 @@ type Message {
   text: String!
   date: Time!
   user: User!
-  user_id: ID!
-  room_id: String!
+  userId: ID!
+  roomId: String!
 }
 
 type User {
@@ -430,7 +438,7 @@ input NewMessage {
 
 input NewRoom {
   id: String!
-  user_ids: [ID!]!
+  userIds: [ID!]!
 }
 
 input UserPass {
@@ -459,8 +467,9 @@ type Query {
 type Room {
     id:      String!
     name: String!
+    messages: [Message!]!
     users:   [User!]!
-    user_ids: [ID!]!
+    userIds: [ID!]!
 }
 `, BuiltIn: false},
 }
@@ -855,8 +864,8 @@ func (ec *executionContext) fieldContext_Message_user(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Message_user_id(ctx context.Context, field graphql.CollectedField, obj *customTypes.Message) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Message_user_id(ctx, field)
+func (ec *executionContext) _Message_userId(ctx context.Context, field graphql.CollectedField, obj *customTypes.Message) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Message_userId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -886,7 +895,7 @@ func (ec *executionContext) _Message_user_id(ctx context.Context, field graphql.
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Message_user_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Message_userId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Message",
 		Field:      field,
@@ -899,8 +908,8 @@ func (ec *executionContext) fieldContext_Message_user_id(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Message_room_id(ctx context.Context, field graphql.CollectedField, obj *customTypes.Message) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Message_room_id(ctx, field)
+func (ec *executionContext) _Message_roomId(ctx context.Context, field graphql.CollectedField, obj *customTypes.Message) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Message_roomId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -930,7 +939,7 @@ func (ec *executionContext) _Message_room_id(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Message_room_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Message_roomId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Message",
 		Field:      field,
@@ -990,10 +999,10 @@ func (ec *executionContext) fieldContext_Mutation_createMessage(ctx context.Cont
 				return ec.fieldContext_Message_date(ctx, field)
 			case "user":
 				return ec.fieldContext_Message_user(ctx, field)
-			case "user_id":
-				return ec.fieldContext_Message_user_id(ctx, field)
-			case "room_id":
-				return ec.fieldContext_Message_room_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Message_userId(ctx, field)
+			case "roomId":
+				return ec.fieldContext_Message_roomId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
@@ -1055,10 +1064,12 @@ func (ec *executionContext) fieldContext_Mutation_createRoom(ctx context.Context
 				return ec.fieldContext_Room_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Room_name(ctx, field)
+			case "messages":
+				return ec.fieldContext_Room_messages(ctx, field)
 			case "users":
 				return ec.fieldContext_Room_users(ctx, field)
-			case "user_ids":
-				return ec.fieldContext_Room_user_ids(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Room_userIds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Room", field.Name)
 		},
@@ -1240,10 +1251,10 @@ func (ec *executionContext) fieldContext_Query_getMessages(ctx context.Context, 
 				return ec.fieldContext_Message_date(ctx, field)
 			case "user":
 				return ec.fieldContext_Message_user(ctx, field)
-			case "user_id":
-				return ec.fieldContext_Message_user_id(ctx, field)
-			case "room_id":
-				return ec.fieldContext_Message_room_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Message_userId(ctx, field)
+			case "roomId":
+				return ec.fieldContext_Message_roomId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
@@ -1298,10 +1309,10 @@ func (ec *executionContext) fieldContext_Query_getUserMessages(ctx context.Conte
 				return ec.fieldContext_Message_date(ctx, field)
 			case "user":
 				return ec.fieldContext_Message_user(ctx, field)
-			case "user_id":
-				return ec.fieldContext_Message_user_id(ctx, field)
-			case "room_id":
-				return ec.fieldContext_Message_room_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Message_userId(ctx, field)
+			case "roomId":
+				return ec.fieldContext_Message_roomId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
@@ -1367,10 +1378,10 @@ func (ec *executionContext) fieldContext_Query_getMessage(ctx context.Context, f
 				return ec.fieldContext_Message_date(ctx, field)
 			case "user":
 				return ec.fieldContext_Message_user(ctx, field)
-			case "user_id":
-				return ec.fieldContext_Message_user_id(ctx, field)
-			case "room_id":
-				return ec.fieldContext_Message_room_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Message_userId(ctx, field)
+			case "roomId":
+				return ec.fieldContext_Message_roomId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
@@ -1543,10 +1554,12 @@ func (ec *executionContext) fieldContext_Query_getRooms(ctx context.Context, fie
 				return ec.fieldContext_Room_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Room_name(ctx, field)
+			case "messages":
+				return ec.fieldContext_Room_messages(ctx, field)
 			case "users":
 				return ec.fieldContext_Room_users(ctx, field)
-			case "user_ids":
-				return ec.fieldContext_Room_user_ids(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Room_userIds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Room", field.Name)
 		},
@@ -1608,10 +1621,12 @@ func (ec *executionContext) fieldContext_Query_getRoom(ctx context.Context, fiel
 				return ec.fieldContext_Room_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Room_name(ctx, field)
+			case "messages":
+				return ec.fieldContext_Room_messages(ctx, field)
 			case "users":
 				return ec.fieldContext_Room_users(ctx, field)
-			case "user_ids":
-				return ec.fieldContext_Room_user_ids(ctx, field)
+			case "userIds":
+				return ec.fieldContext_Room_userIds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Room", field.Name)
 		},
@@ -1677,10 +1692,10 @@ func (ec *executionContext) fieldContext_Query_getRoomMessages(ctx context.Conte
 				return ec.fieldContext_Message_date(ctx, field)
 			case "user":
 				return ec.fieldContext_Message_user(ctx, field)
-			case "user_id":
-				return ec.fieldContext_Message_user_id(ctx, field)
-			case "room_id":
-				return ec.fieldContext_Message_room_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Message_userId(ctx, field)
+			case "roomId":
+				return ec.fieldContext_Message_roomId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
@@ -1916,6 +1931,64 @@ func (ec *executionContext) fieldContext_Room_name(ctx context.Context, field gr
 	return fc, nil
 }
 
+func (ec *executionContext) _Room_messages(ctx context.Context, field graphql.CollectedField, obj *customTypes.Room) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Room_messages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Messages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*customTypes.Message)
+	fc.Result = res
+	return ec.marshalNMessage2ᚕᚖmessengerᚋgraphᚋcustomTypesᚐMessageᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Room_messages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Message_id(ctx, field)
+			case "text":
+				return ec.fieldContext_Message_text(ctx, field)
+			case "date":
+				return ec.fieldContext_Message_date(ctx, field)
+			case "user":
+				return ec.fieldContext_Message_user(ctx, field)
+			case "userId":
+				return ec.fieldContext_Message_userId(ctx, field)
+			case "roomId":
+				return ec.fieldContext_Message_roomId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Room_users(ctx context.Context, field graphql.CollectedField, obj *customTypes.Room) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Room_users(ctx, field)
 	if err != nil {
@@ -1966,8 +2039,8 @@ func (ec *executionContext) fieldContext_Room_users(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Room_user_ids(ctx context.Context, field graphql.CollectedField, obj *customTypes.Room) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Room_user_ids(ctx, field)
+func (ec *executionContext) _Room_userIds(ctx context.Context, field graphql.CollectedField, obj *customTypes.Room) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Room_userIds(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1997,7 +2070,7 @@ func (ec *executionContext) _Room_user_ids(ctx context.Context, field graphql.Co
 	return ec.marshalNID2ᚕintᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Room_user_ids(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Room_userIds(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Room",
 		Field:      field,
@@ -3922,7 +3995,7 @@ func (ec *executionContext) unmarshalInputNewRoom(ctx context.Context, obj inter
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "user_ids"}
+	fieldsInOrder := [...]string{"id", "userIds"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3937,10 +4010,10 @@ func (ec *executionContext) unmarshalInputNewRoom(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
-		case "user_ids":
+		case "userIds":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_ids"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userIds"))
 			it.UserIds, err = ec.unmarshalNID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
@@ -4033,16 +4106,16 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "user_id":
+		case "userId":
 
-			out.Values[i] = ec._Message_user_id(ctx, field, obj)
+			out.Values[i] = ec._Message_userId(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "room_id":
+		case "roomId":
 
-			out.Values[i] = ec._Message_room_id(ctx, field, obj)
+			out.Values[i] = ec._Message_roomId(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -4374,6 +4447,13 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "messages":
+
+			out.Values[i] = ec._Room_messages(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "users":
 
 			out.Values[i] = ec._Room_users(ctx, field, obj)
@@ -4381,9 +4461,9 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "user_ids":
+		case "userIds":
 
-			out.Values[i] = ec._Room_user_ids(ctx, field, obj)
+			out.Values[i] = ec._Room_userIds(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

@@ -16,7 +16,6 @@ func GraphqlHandler(c *gin.Context) {
 		log.Fatal()
 	}
 	db := ctx.Database
-
 	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{DB: db}}))
 	h.ServeHTTP(c.Writer, c.Request)
 }

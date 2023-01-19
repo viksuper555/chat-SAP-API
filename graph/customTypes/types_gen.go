@@ -11,8 +11,8 @@ type Message struct {
 	Text   string    `json:"text"`
 	Date   time.Time `json:"date"`
 	User   *User     `json:"user"`
-	UserID int       `json:"user_id"`
-	RoomID string    `json:"room_id"`
+	UserID int       `json:"userId"`
+	RoomID string    `json:"roomId"`
 }
 
 type NewMessage struct {
@@ -23,14 +23,15 @@ type NewMessage struct {
 
 type NewRoom struct {
 	ID      string `json:"id"`
-	UserIds []int  `json:"user_ids"`
+	UserIds []int  `json:"userIds"`
 }
 
 type Room struct {
-	ID      string  `json:"id"`
-	Name    string  `json:"name"`
-	Users   []*User `json:"users"`
-	UserIds []int   `json:"user_ids"`
+	ID       string     `json:"id"`
+	Name     string     `json:"name"`
+	Messages []*Message `json:"messages"`
+	Users    []*User    `json:"users"`
+	UserIds  []int      `json:"userIds"`
 }
 
 type User struct {

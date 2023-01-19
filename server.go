@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"log"
@@ -33,6 +34,7 @@ func main() {
 		c.Request = c.Request.WithContext(con)
 		c.Next()
 	})
+	r.Use(cors.Default())
 	go hub.MainHub.Run()
 
 	r.GET("/ws", func(c *gin.Context) {

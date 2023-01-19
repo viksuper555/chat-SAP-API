@@ -155,7 +155,7 @@ func (r *queryResolver) GetUser(ctx context.Context, userID int) (*customTypes.U
 func (r *queryResolver) GetRooms(ctx context.Context, userID int) ([]*customTypes.Room, error) {
 	var rooms []*model.Room
 
-	err := r.DB.Preload("Users").Where("id IN (SELECT room_id FROM user_room WHERE user_id = ?)", userID).Find(&rooms).Error
+	err := r.DB.Preload("Messages").Preload("Users").Where("id IN (SELECT room_id FROM user_room WHERE user_id = ?)", userID).Find(&rooms).Error
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (r *queryResolver) GetRooms(ctx context.Context, userID int) ([]*customType
 // GetRoom is the resolver for the getRoom field.
 func (r *queryResolver) GetRoom(ctx context.Context, roomID string) (*customTypes.Room, error) {
 	var room model.Room
-	err := r.DB.Where(&model.Room{ID: roomID}).Preload("Users").First(&room).Error
+	err := r.DB.Where(&model.Room{ID: roomID}).Preload("Users").Preload("Messages").First(&room).Error
 	if err != nil {
 		return nil, err
 	}
