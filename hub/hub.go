@@ -2,9 +2,12 @@ package hub
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"log"
+	"messenger/internal/common"
 )
 
 var MainHub = newHub()
+var Rooms = map[string]*Room{}
 
 // Room maintains the set of active Clients and broadcasts messages to the
 // Clients.
@@ -27,8 +30,6 @@ type Hub struct {
 	// Registered Clients.
 	Clients map[int]*Client
 	// Open Rooms.
-	Rooms map[string]*Room
-
 	Broadcast chan interface{}
 	// Register requests from the Clients.
 	register chan *Client
@@ -38,22 +39,32 @@ type Hub struct {
 }
 
 func newHub() *Hub {
-	g := newRoom()
-	g.uuid = "global"
-	vp := newRoom()
-	vp.uuid = "vp"
 	return &Hub{
 		Broadcast:  make(chan interface{}),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		Clients:    make(map[int]*Client),
-		Rooms:      map[string]*Room{g.uuid: g, vp.uuid: vp},
+	}
+}
+func initRooms() {
+	dbRooms, err := common.GetRooms(common.Db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, dbRoom := range dbRooms {
+		r := initRoom(dbRoom.ID)
+		Rooms[r.uuid] = r
+		go r.Run()
 	}
 }
 
-func newRoom() *Room {
+func initRoom(id string) *Room {
+	if id == "" {
+		id = uuid.NewV4().String()
+	}
+
 	return &Room{
-		uuid:       uuid.NewV4().String(),
+		uuid:       id,
 		Broadcast:  make(chan interface{}),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -62,9 +73,7 @@ func newRoom() *Room {
 }
 
 func (h *Hub) Run() {
-	for i := range h.Rooms {
-		go h.Rooms[i].Run()
-	}
+	go initRooms()
 	for {
 		select {
 		case client := <-h.register:

@@ -3,6 +3,7 @@ package hub
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
 	"log"
 	"messenger/dto_model"
@@ -10,8 +11,6 @@ import (
 	"messenger/model"
 	"net/http"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -62,7 +61,7 @@ func (c *Client) readPump() {
 			}
 		}
 		for _, rId := range room_ids {
-			c.hub.Rooms[rId].unregister <- c
+			Rooms[rId].unregister <- c
 		}
 
 		c.conn.Close()
@@ -90,7 +89,7 @@ func (c *Client) readPump() {
 		msg.SenderName = c.user.Username
 		msg.Timestamp = time.Now().Unix()
 		msg.Type = "message"
-		r, ok := c.hub.Rooms[msg.RoomId]
+		r, ok := Rooms[msg.RoomId]
 		if ok {
 			r.Broadcast <- msg
 		}
@@ -190,7 +189,7 @@ func ServeWs(c *gin.Context, hub *Hub) {
 	}
 
 	for _, rId := range roomIds {
-		hub.Rooms[rId].register <- client
+		Rooms[rId].register <- client
 	}
 
 	onlineUsers, _ := getOnlineUsers(MainHub)

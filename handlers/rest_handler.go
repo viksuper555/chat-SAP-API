@@ -28,7 +28,7 @@ func SendMessage(c *gin.Context) {
 	}
 	common.Db.Create(&msg)
 	bytes, err := json.Marshal(msg)
-	hub.MainHub.Rooms[msgBody.RoomId].Broadcast <- bytes
+	hub.Rooms[msgBody.RoomId].Broadcast <- bytes
 	//hub.MainHub.Broadcast <- bytes
 }
 
@@ -84,7 +84,7 @@ func Join(c *gin.Context) {
 		c.Status(http.StatusForbidden)
 		return
 	}
-	room, ok := hub.MainHub.Rooms[jb.RoomId]
+	room, ok := hub.Rooms[jb.RoomId]
 	if !ok {
 		c.Status(http.StatusForbidden)
 		return
@@ -112,7 +112,7 @@ func Leave(c *gin.Context) {
 		c.Status(http.StatusForbidden)
 		return
 	}
-	room, ok := hub.MainHub.Rooms[jb.RoomId]
+	room, ok := hub.Rooms[jb.RoomId]
 	if !ok {
 		c.Status(http.StatusForbidden)
 		return
