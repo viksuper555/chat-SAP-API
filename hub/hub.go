@@ -1,6 +1,7 @@
 package hub
 
 import (
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"log"
 	"messenger/internal/common"
@@ -52,24 +53,37 @@ func initRooms() {
 		log.Fatal(err)
 	}
 	for _, dbRoom := range dbRooms {
-		r := initRoom(dbRoom.ID)
-		Rooms[r.uuid] = r
-		go r.Run()
+		err := InitRoom(dbRoom.ID)
+		if err != nil {
+			log.Printf("Error starting room %s %s", dbRoom.ID, err.Error())
+		}
 	}
 }
 
-func initRoom(id string) *Room {
+func InitRoom(id string) error {
 	if id == "" {
 		id = uuid.NewV4().String()
 	}
 
-	return &Room{
+	r := &Room{
 		uuid:       id,
 		Broadcast:  make(chan interface{}),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		Clients:    make(map[*Client]bool),
 	}
+	Rooms[r.uuid] = r
+	go r.Run()
+	return nil
+}
+func ConnectUserToRoom(uId int, rId string) error {
+	client, ok := MainHub.Clients[uId]
+	if !ok {
+		return fmt.Errorf("User not connected")
+	}
+	Rooms[rId].register <- client
+
+	return nil
 }
 
 func (h *Hub) Run() {

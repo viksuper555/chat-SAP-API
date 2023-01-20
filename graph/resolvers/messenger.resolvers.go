@@ -6,8 +6,10 @@ package graph
 
 import (
 	"context"
+	"log"
 	"messenger/graph/customTypes"
 	"messenger/graph/generated"
+	"messenger/hub"
 	"messenger/model"
 	"time"
 
@@ -55,6 +57,16 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input customTypes.New
 	err = r.DB.Create(&rm).Error
 	if err != nil {
 		return nil, err
+	}
+
+	err = hub.InitRoom(rm.ID)
+	if err != nil {
+		log.Printf("Error starting room: %s", err.Error())
+	}
+
+	err = hub.ConnectUserToRoom(user.ID, rm.ID)
+	if err != nil {
+		log.Printf("Error connecting user to room: %s", err.Error())
 	}
 
 	res := &customTypes.Room{

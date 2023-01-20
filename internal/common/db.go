@@ -96,9 +96,16 @@ func RemoveUserFromRoom(db *gorm.DB, userId int, roomId string) error {
 	if err != nil {
 		return err
 	}
-	err = db.Model(&r).Association("Users").Delete(&u)
-	if err != nil {
-		return err
+	if len(r.Users) > 1 {
+		err = db.Model(&r).Association("Users").Delete(&u)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.Delete(&r).Error
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
