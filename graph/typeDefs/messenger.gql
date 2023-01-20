@@ -21,8 +21,8 @@ input NewMessage {
 }
 
 input NewRoom {
-  id: String!
-  userIds: [ID!]!
+  name: String!
+  creatorId: ID!
 }
 
 input UserPass {

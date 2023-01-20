@@ -59,6 +59,13 @@ func GetUserRoomIds(db *gorm.DB, userId int) ([]string, error) {
 	}
 	return roomIds, nil
 }
+func GetRooms(db *gorm.DB) ([]*model.Room, error) {
+	var rooms []*model.Room
+	if err := db.Find(&rooms).Error; err != nil {
+		return nil, err
+	}
+	return rooms, nil
+}
 
 func AddUserToRoom(db *gorm.DB, userId int, roomId string) error {
 	var u model.User

@@ -37,18 +37,19 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input customTypes.
 
 // CreateRoom is the resolver for the createRoom field.
 func (r *mutationResolver) CreateRoom(ctx context.Context, input customTypes.NewRoom) (*customTypes.Room, error) {
-	var users []*model.User
-	err := r.DB.Find(&users).Error
+	var user *model.User
+	err := r.DB.Where("id = ?", input.CreatorID).Find(&user).Error
 	if err != nil {
 		return nil, err
 	}
 
-	if input.ID == "" {
-		input.ID = uuid.NewV4().String()
+	if input.Name == "" {
+		input.Name = user.Username + "'s room"
 	}
 	rm := &model.Room{
-		ID:    input.ID,
-		Users: users,
+		ID:    uuid.NewV4().String(),
+		Name:  input.Name,
+		Users: []*model.User{user},
 	}
 
 	err = r.DB.Create(&rm).Error
@@ -58,6 +59,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input customTypes.New
 
 	res := &customTypes.Room{
 		ID:    rm.ID,
+		Name:  rm.Name,
 		Users: model.UsersToGraph(rm.Users),
 	}
 	return res, nil

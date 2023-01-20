@@ -437,8 +437,8 @@ input NewMessage {
 }
 
 input NewRoom {
-  id: String!
-  userIds: [ID!]!
+  name: String!
+  creatorId: ID!
 }
 
 input UserPass {
@@ -3995,26 +3995,26 @@ func (ec *executionContext) unmarshalInputNewRoom(ctx context.Context, obj inter
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userIds"}
+	fieldsInOrder := [...]string{"name", "creatorId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "id":
+		case "name":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "userIds":
+		case "creatorId":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userIds"))
-			it.UserIds, err = ec.unmarshalNID2ᚕintᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("creatorId"))
+			it.CreatorID, err = ec.unmarshalNID2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
