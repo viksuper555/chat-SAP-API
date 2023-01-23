@@ -92,7 +92,7 @@ func RemoveUserFromRoom(db *gorm.DB, userId int, roomId string) error {
 		return err
 	}
 	var r model.Room
-	err = db.Where(&model.Room{ID: roomId}).First(&r).Error
+	err = db.Preload("Users").Where(&model.Room{ID: roomId}).First(&r).Error
 	if err != nil {
 		return err
 	}

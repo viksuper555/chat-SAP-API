@@ -178,6 +178,10 @@ func ServeWs(c *gin.Context, hub *Hub) {
 		conn.Close()
 		return
 	}
+	otherClient, ok := MainHub.Clients[user.ID]
+	if ok {
+		otherClient.conn.Close()
+	}
 	client.user = &user
 	hub.register <- client
 
