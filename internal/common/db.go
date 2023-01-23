@@ -32,20 +32,38 @@ func InitDb(cfg config.Config) (*gorm.DB, error) {
 		&model.Message{},
 		&model.Room{},
 	}
+	log.Printf("Auto migration")
 	for _, m := range models {
-		log.Printf("Auto migration of m")
 		err = Db.AutoMigrate(m)
 		if err != nil {
 			log.Printf("Error migrating m: %s", err.Error())
 			return nil, errors.Wrap(Db.Error, "Failed to migrate m")
 		}
 	}
+	err = AutoInitRooms()
 	if err != nil {
 		return nil, err
 	}
 	return Db, nil
 }
+func AutoInitRooms() error {
+	var rm model.Room
+	if err := Db.Where("id = ?", "global").Find(&rm).Error; err == nil {
+		return nil
+	}
+	log.Printf("Creating default room")
+	grm := &model.Room{
+		ID:    "global",
+		Name:  "Global Room",
+		Users: []*model.User{},
+	}
 
+	if err := Db.Create(&grm).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
 func GetDbUrl(cfg config.Config) string {
 	//dbURL := "postgres://pg:pass@localhost:5432/messenger"
 	db := cfg.Database

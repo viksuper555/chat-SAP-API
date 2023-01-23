@@ -1,17 +1,33 @@
 version: "3.8"
 
 services:
-  database:
-    container_name: database
-    image: postgres:15.1
+  postgresdb:
+    container_name: postgresdb
+    image: postgres:latest
     restart: always
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=pass
       - POSTGRES_DB=messenger
+#      - DATABASE_NAME=messenger
+#      - DATABASE_USER=admin
+#      - DATABASE_PASSWORD=pass
+      - DATABASE_IP=postgres:5432
     ports:
       - "5432:5432"
+    healthcheck:
+      test: "exit 0"
+      interval: 2s
+
+  backend:
+    container_name: messenger_backend
+    build:
+      dockerfile: Dockerfile
+      context: .
     volumes:
-      - cache:/var/lib/postgresql/cache
-volumes:
-  db:
+      - .:/backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
