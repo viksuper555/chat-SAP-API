@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgresdb:
+    container_name: postgresdb
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=messenger
+      - DATABASE_IP=postgres:5432
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: "exit 0"
+      interval: 2s
+
+  backend:
+    container_name: messenger_backend
+    build:
+      dockerfile: Dockerfile
+      context: .
+    volumes:
+      - .:/backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+
+#  frontend:
+#    container_name: messenger_ui
+#    restart: always
+#    build:
+#      dockerfile: ../messenger_ui/messenger/Dockerfile
+#      context: .
+#    ports:
+#      - '4200:4200'
+#    command:
+#      yarn start
+#    volumes:
+#      - ./:/frontend

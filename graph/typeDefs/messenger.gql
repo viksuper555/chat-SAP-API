@@ -1,0 +1,57 @@
+scalar Time
+
+type Message {
+  id: ID!
+  text: String!
+  date: Time!
+  user: User!
+  userId: ID!
+  roomId: String!
+}
+
+type User {
+  id: ID!
+  name: String!
+}
+
+input NewMessage {
+  userId: ID!
+  text: String!
+  roomId: String!
+}
+
+input NewRoom {
+  name: String!
+  creatorId: ID!
+}
+
+input UserPass {
+  username: String!
+  password: String!
+}
+
+type Mutation {
+  createMessage(input: NewMessage!): Message!
+  createRoom(input: NewRoom!): Room!
+  createUser(input: UserPass!): User!
+  login(input: UserPass!): Boolean!
+}
+
+type Query {
+  getMessages: [Message!]!
+  getUserMessages(userId: ID!): [Message!]!
+  getMessage(messageId: ID!): Message!
+  getUsers: [User!]!
+  getUser(userId: ID!): User!
+  getRooms(userId: ID!): [Room!]!
+  getRoom(roomId: String!): Room!
+  getRoomMessages(roomId: String!): [Message!]!
+}
+
+type Room {
+    id:      String!
+    name: String!
+    messages: [Message!]!
+    users:   [User!]!
+    userIds: [ID!]!
+}
