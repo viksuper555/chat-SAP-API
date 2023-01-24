@@ -9,9 +9,6 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=pass
       - POSTGRES_DB=messenger
-#      - DATABASE_NAME=messenger
-#      - DATABASE_USER=admin
-#      - DATABASE_PASSWORD=pass
       - DATABASE_IP=postgres:5432
     ports:
       - "5432:5432"
@@ -31,3 +28,16 @@ services:
     depends_on:
       postgresdb:
         condition: service_healthy
+
+#  frontend:
+#    container_name: messenger_ui
+#    restart: always
+#    build:
+#      dockerfile: ../messenger_ui/messenger/Dockerfile
+#      context: .
+#    ports:
+#      - '4200:4200'
+#    command:
+#      yarn start
+#    volumes:
+#      - ./:/frontend
