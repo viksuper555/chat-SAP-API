@@ -19,21 +19,21 @@ type Message struct {
 	UserID int
 	User   User `json:"user"`
 	RoomID string
-	Room   Room `json:"room,omitempty"`
+	Room   Room `gorm:"constraint:OnDelete:CASCADE;" json:"room,omitempty"`
 }
 
 type User struct {
 	ID       int    `json:"id,omitempty" gorm:"primaryKey"`
 	Username string `json:"name,omitempty"`
 	Password string `json:"password,omitempty"`
-	Rooms    []Room `gorm:"many2many:user_room" json:"rooms"`
+	Rooms    []Room `gorm:"many2many:user_room; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"rooms"`
 }
 
 type Room struct {
 	ID       string     `json:"id" gorm:"type:varchar(255); primaryKey"`
 	Name     string     `json:"name,omitempty"`
-	Users    []*User    `gorm:"many2many:user_room" json:"users"`
-	Messages []*Message `gorm:"foreignKey:RoomID" json:"messages"`
+	Users    []*User    `gorm:"many2many:user_room; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"users"`
+	Messages []*Message `gorm:"foreignKey:RoomID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"messages"`
 }
 
 func (m *Message) ToGraph() *customTypes.Message {

@@ -48,7 +48,8 @@ func InitDb(cfg config.Config) (*gorm.DB, error) {
 }
 func AutoInitRooms() error {
 	var rm model.Room
-	if err := Db.Where("id = ?", "global").Find(&rm).Error; err == nil {
+	err := Db.Where("id = ?", "global").Find(&rm).Error
+	if err == nil && rm.ID != "" {
 		return nil
 	}
 	log.Printf("Creating default room")
